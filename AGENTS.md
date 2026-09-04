@@ -7,7 +7,7 @@ Build a personal ambient dashboard that presents the information most useful to 
 ## Repository structure
 
 - `backend/` — Spring Boot backend, built with Maven and Java 25
-- `frontend/` — Angular frontend (to be created)
+- `frontend/` — Angular frontend
 - `docs/` — product and architecture documentation
 
 Add a more specific `AGENTS.md` inside `backend/` or `frontend/` only when that area needs rules that do not apply to the whole repository. The nearest `AGENTS.md` takes precedence.
@@ -22,6 +22,23 @@ Add a more specific `AGENTS.md` inside `backend/` or `frontend/` only when that 
 - Never store credentials, tokens, personal data, or local `.env` files in Git.
 - Prefer small, reviewable changes with tests.
 - Fix root causes rather than suppressing errors.
+
+## Feature and story workflow
+
+Group related product capabilities into feature folders under `docs/features/`. Each feature has a three-letter identifier and a `README.md` created from `docs/features/FEATURE_TEMPLATE.md`. Stories within that feature use identifiers such as `WEA-001` and are created from `docs/features/STORY_TEMPLATE.md`.
+
+Do not start story implementation immediately.
+
+1. Discuss and refine the story with the user.
+2. Assign the feature's identifier and next story number, then write `docs/features/<feature>/<KEY>-NNN-short-title.md` from `docs/features/STORY_TEMPLATE.md`.
+3. Ask the user to review and approve the story.
+4. After approval, write an implementation plan from `docs/plans/TEMPLATE.md` with concrete, testable steps.
+5. Ask the user to review and approve the plan.
+6. Only then implement the story, using tests first for behavior changes.
+
+Do not silently expand scope while planning or implementing. Put unresolved decisions in the story and stop for user input when they affect behavior.
+
+Use the story identifier in related branch names, plan filenames, pull requests, and commit messages. Example: `WEA-001: add current weather endpoint`. Never create a commit unless explicitly asked.
 
 ## Backend conventions
 
@@ -56,6 +73,16 @@ npm run build
 ```
 
 Run all frontend checks together with `npm run check`.
+
+## Testing conventions
+
+- Follow the testing honeycomb: emphasize integration tests, use end-to-end tests for key user journeys, and keep unit tests selective.
+- All verification must be automated; do not rely on manual checks for completion.
+- Test observable functionality through stable public boundaries rather than implementation details.
+- Tests must support refactoring: an internal restructuring that preserves behavior should not require test changes.
+- Add unit tests when isolated logic is complex or has many meaningful input permutations; do not create a unit test for every small change.
+- Prefer a small number of high-value tests over a large suite of narrow, mock-heavy or interaction-heavy tests.
+- For behavior changes, write the appropriate functional test before implementation and confirm that it fails for the expected reason.
 
 ## Completion criteria
 
