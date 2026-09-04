@@ -1,6 +1,6 @@
 # Implementation plan: [KEY]-NNN — [story]
 
-Related story: `docs/features/[feature]/[KEY]-NNN-short-title.md`
+Related story: [KEY-NNN — story title](../features/[feature]/[KEY]-NNN-short-title.md)
 Status: Draft
 
 ## Approach
