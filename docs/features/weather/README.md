@@ -21,3 +21,4 @@ Provide useful weather information at a glance so the dashboard user can underst
 - [WEA-001 — Show current weather](./WEA-001-current-weather.md)
 - [WEA-002 — Use the browser location](./WEA-002-browser-location.md)
 - [WEA-003 — Illustrate the current weather](./WEA-003-weather-illustration.md)
+- [WEA-004 — Show a five-day weather forecast](./WEA-004-five-day-forecast.md)
