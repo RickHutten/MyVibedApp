@@ -6,7 +6,7 @@ This document describes the initial direction. It is not a finalized design. Rec
 
 ## Technology baseline
 
-- Backend: Spring Boot on Java 25
+- Backend: Spring Boot 4.1.1 on Java 25
 - Build: Maven
 - Frontend: Angular
 - Database: PostgreSQL
@@ -37,6 +37,8 @@ The Angular application renders the tablet dashboard and normal browser experien
 ### Backend
 
 The Spring Boot application provides the application API, owns domain behavior, coordinates external integrations, and determines what information is currently relevant.
+
+The initial HTTP API uses Spring MVC and exposes application endpoints below `/api`. Spring Boot Actuator provides operational health information below `/actuator`.
 
 ### Database
 

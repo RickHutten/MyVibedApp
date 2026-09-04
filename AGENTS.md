@@ -35,13 +35,7 @@ Add a more specific `AGENTS.md` inside `backend/` or `frontend/` only when that 
 Run backend verification from `backend/`:
 
 ```sh
-./mvnw test
-```
-
-Until the Maven wrapper is added, use:
-
-```sh
-mvn test
+./mvnw verify
 ```
 
 ## Frontend conventions
