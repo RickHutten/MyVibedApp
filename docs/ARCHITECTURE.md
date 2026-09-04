@@ -8,7 +8,7 @@ This document describes the initial direction. It is not a finalized design. Rec
 
 - Backend: Spring Boot 4.1.1 on Java 25
 - Build: Maven
-- Frontend: Angular
+- Frontend: Angular 21 LTS with standalone components and strict TypeScript
 - Database: PostgreSQL
 - Client updates: real-time communication where it provides user value
 

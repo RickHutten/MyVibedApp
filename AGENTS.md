@@ -46,7 +46,16 @@ Run backend verification from `backend/`:
 - Include loading, empty, offline, and error states for external data.
 - Add tests for behavior changes.
 
-Document exact frontend commands here after the Angular workspace is created.
+Run frontend verification from `frontend/`:
+
+```sh
+npm run lint
+npm run format:check
+npm test -- --watch=false
+npm run build
+```
+
+Run all frontend checks together with `npm run check`.
 
 ## Completion criteria
 
