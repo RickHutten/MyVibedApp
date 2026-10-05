@@ -1,0 +1,30 @@
+<section class="weather-card" aria-labelledby="weather-title">
+  <header>
+    <p class="eyebrow">Current weather</p>
+    <h1 id="weather-title">Amsterdam</h1>
+  </header>
+
+  @if (status() === 'loading') {
+    <p>Loading weather…</p>
+  } @else if (status() === 'unavailable') {
+    <p>Weather is unavailable</p>
+  } @else if (weather(); as current) {
+    <div class="temperature">{{ current.temperatureC }}°C</div>
+    <p class="condition">{{ current.condition }}</p>
+    <dl>
+      <div>
+        <dt>Chance of rain</dt>
+        <dd>{{ current.precipitationProbabilityPercent }}%</dd>
+      </div>
+      <div>
+        <dt>Wind</dt>
+        <dd>{{ current.windSpeedKmh }} km/h {{ current.windDirection }}</dd>
+      </div>
+    </dl>
+  }
+
+  <footer>
+    Weather data by
+    <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
+  </footer>
+</section>

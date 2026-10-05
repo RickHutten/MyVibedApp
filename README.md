@@ -31,3 +31,16 @@ The primary display is a tablet mounted or placed somewhere in the home. The app
 - Frontend: Angular
 - Database: PostgreSQL
 - Real-time updates between backend and frontend
+
+## Local development
+
+Run the backend with `./mvnw spring-boot:run` from `backend/` and the frontend
+with `npm start` from `frontend/`. The Angular development server proxies
+`/api` requests to the backend on port 8080.
+
+On a Sopra-managed macOS device, allow Java to use certificates from the
+system keychain when starting the backend:
+
+```sh
+JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStoreType=KeychainStore ./mvnw spring-boot:run
+```

@@ -48,6 +48,8 @@ PostgreSQL stores application-owned data such as preferences, reminders, integra
 
 Calendar, task, weather, mapping, and traffic providers should be isolated behind application interfaces. This keeps provider-specific APIs out of the domain model and allows providers to be replaced or tested independently.
 
+The initial weather integration uses Open-Meteo through a backend adapter. The frontend sends a location to the application-owned `/api/weather/current` endpoint and never depends on Open-Meteo's contract directly. WEA-001 requests weather once when the dashboard loads and does not add caching, retries, fallback data, or background refresh. The interface includes the attribution required by the provider's CC BY 4.0 terms.
+
 ## Real-time updates
 
 The dashboard needs timely updates, but the transport has not been selected. Server-Sent Events are a likely starting point for primarily server-to-client updates. WebSockets should be chosen only if bidirectional real-time communication is required.
@@ -64,7 +66,7 @@ The dashboard needs timely updates, but the transport has not been selected. Ser
 
 - Authentication and deployment model
 - Local-only versus hosted operation
-- First external service providers
+- Providers for calendar, tasks, mapping, and traffic
 - API style and versioning
 - Server-Sent Events versus WebSockets
 - Database migration tool
