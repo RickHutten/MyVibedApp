@@ -34,6 +34,8 @@ The repository is a monorepo. Backend and frontend remain independently buildabl
 
 The Angular application renders the tablet dashboard and normal browser experience. It should not call third-party providers directly when doing so would expose credentials or duplicate integration logic.
 
+Frontend features that depend on the dashboard location consume one application-owned location service rather than defining their own coordinates or timezone. The initial location is Amsterdam (`52.3676`, `4.9041`, `Europe/Amsterdam`). Weather uses its coordinates for backend requests, while the clock uses its IANA timezone so daylight-saving changes are handled by the platform. Location selection, persistence, and browser geolocation remain future work.
+
 ### Backend
 
 The Spring Boot application provides the application API, owns domain behavior, coordinates external integrations, and determines what information is currently relevant.

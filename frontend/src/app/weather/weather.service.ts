@@ -1,20 +1,20 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
+import { DashboardLocationService } from '../shared/dashboard-location.service';
 import { CurrentWeather } from './current-weather';
-
-const AMSTERDAM = {
-  latitude: 52.3676,
-  longitude: 4.9041,
-} as const;
 
 @Injectable({ providedIn: 'root' })
 export class WeatherService {
   private readonly http = inject(HttpClient);
+  private readonly location = inject(DashboardLocationService).location;
 
   getCurrentWeather() {
     return this.http.get<CurrentWeather>('/api/weather/current', {
-      params: AMSTERDAM,
+      params: {
+        latitude: this.location.latitude,
+        longitude: this.location.longitude,
+      },
     });
   }
 }
