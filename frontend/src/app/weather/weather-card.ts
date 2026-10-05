@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 
+import { DashboardLocationService } from '../shared/dashboard-location.service';
 import { CurrentWeather } from './current-weather';
 import { WeatherService } from './weather.service';
 
@@ -11,6 +12,7 @@ import { WeatherService } from './weather.service';
 export class WeatherCard implements OnInit {
   private readonly weatherService = inject(WeatherService);
 
+  protected readonly location = inject(DashboardLocationService).location;
   protected readonly weather = signal<CurrentWeather | null>(null);
   protected readonly status = signal<'loading' | 'ready' | 'unavailable'>('loading');
 

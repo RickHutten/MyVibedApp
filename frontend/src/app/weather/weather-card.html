@@ -1,7 +1,7 @@
 <section class="weather-card" aria-labelledby="weather-title">
   <header>
     <p class="eyebrow">Current weather</p>
-    <h1 id="weather-title">Amsterdam</h1>
+    <h1 id="weather-title">{{ location.name }}</h1>
   </header>
 
   @if (status() === 'loading') {

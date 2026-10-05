@@ -4,6 +4,7 @@ import axe from 'axe-core';
 import { provideHttpClient } from '@angular/common/http';
 import { vi } from 'vitest';
 
+import { DashboardLocationService } from '../shared/dashboard-location.service';
 import { WeatherCard } from './weather-card';
 
 describe('WeatherCard', () => {
@@ -109,5 +110,49 @@ describe('WeatherCard', () => {
       },
     });
     expect(results.violations).toEqual([]);
+  });
+});
+
+describe('WeatherCard shared location', () => {
+  it('uses the shared dashboard location for the heading and weather request', async () => {
+    await TestBed.configureTestingModule({
+      imports: [WeatherCard],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: DashboardLocationService,
+          useValue: {
+            location: {
+              name: 'Rotterdam',
+              latitude: 51.9244,
+              longitude: 4.4777,
+              timeZone: 'Europe/Amsterdam',
+            },
+          },
+        },
+      ],
+    }).compileComponents();
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(WeatherCard);
+    fixture.detectChanges();
+
+    const request = http.expectOne(
+      (candidate) =>
+        candidate.url === '/api/weather/current' &&
+        candidate.params.get('latitude') === '51.9244' &&
+        candidate.params.get('longitude') === '4.4777',
+    );
+    request.flush({
+      temperatureC: 19.7,
+      condition: 'Overcast',
+      precipitationProbabilityPercent: 85,
+      windSpeedKmh: 25.6,
+      windDirection: 'W',
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Rotterdam');
+    http.verify();
   });
 });
