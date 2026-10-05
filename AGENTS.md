@@ -10,7 +10,7 @@ Build a personal ambient dashboard that presents the information most useful to 
 - `frontend/` — Angular frontend
 - `docs/` — product and architecture documentation
 
-Add a more specific `AGENTS.md` inside `backend/` or `frontend/` only when that area needs rules that do not apply to the whole repository. The nearest `AGENTS.md` takes precedence.
+Add a more specific `AGENTS.md` inside `backend/` or `frontend/` only when that area needs rules that do not apply to the whole repository. The nearest `AGENTS.md` takes precedence. Don't edit any `AGENTS.md` unless you are explicitly asked to do so.
 
 ## Working principles
 

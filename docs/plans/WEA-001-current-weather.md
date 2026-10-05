@@ -1,7 +1,7 @@
 # Implementation plan: WEA-001 — Show current weather
 
 Related story: [WEA-001 — Show current weather](../features/weather/WEA-001-current-weather.md)
-Status: Draft
+Status: Approved
 
 ## Approach
 

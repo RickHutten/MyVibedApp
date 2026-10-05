@@ -30,14 +30,14 @@ The dashboard will retrieve weather when it loads and present only the most usef
 
 ## Acceptance criteria
 
-- [ ] The dashboard shows the current temperature for Amsterdam in °C.
-- [ ] The dashboard shows a human-readable current weather condition.
-- [ ] The dashboard shows the current hour's chance of rain as a percentage.
-- [ ] The dashboard shows wind speed in km/h and wind direction.
-- [ ] The frontend supplies the fixed Amsterdam location when requesting weather.
-- [ ] Weather is requested when the dashboard loads.
-- [ ] The dashboard shows that weather is unavailable when the request fails.
-- [ ] The dashboard does not refresh weather automatically after loading.
+- [x] The dashboard shows the current temperature for Amsterdam in °C.
+- [x] The dashboard shows a human-readable current weather condition.
+- [x] The dashboard shows the current hour's chance of rain as a percentage.
+- [x] The dashboard shows wind speed in km/h and wind direction.
+- [x] The frontend supplies the fixed Amsterdam location when requesting weather.
+- [x] Weather is requested when the dashboard loads.
+- [x] The dashboard shows that weather is unavailable when the request fails.
+- [x] The dashboard does not refresh weather automatically after loading.
 
 ## Dependencies
 
