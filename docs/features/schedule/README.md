@@ -19,7 +19,7 @@ A configurable work schedule that tells the dashboard where the user needs to be
 
 ## Stories
 
-- [SCH-001](./SCH-001-configure-default-weekly-work-pattern.md) — Configure the default weekly work pattern
+- [SCH-001](./SCH-001-configure-default-weekly-work-pattern.md) — Configure the default weekly work schedule
 - [SCH-002](./SCH-002-configure-recurring-schedule-rules.md) — Configure recurring schedule rules
 - [SCH-003](./SCH-003-configure-one-off-schedule-overrides.md) — Configure one-off schedule overrides
 - [SCH-004](./SCH-004-resolve-upcoming-work-locations.md) — Resolve upcoming work locations
