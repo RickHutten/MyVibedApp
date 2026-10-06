@@ -8,6 +8,7 @@ import { WeatherCard } from '../weather/weather-card';
   imports: [Clock, WeatherCard],
   template: `
     <main>
+      <a class="settings-link" href="/settings/schedule">Schedule settings</a>
       <app-clock />
       <app-weather-card />
     </main>
@@ -19,6 +20,7 @@ import { WeatherCard } from '../weather/weather-card';
     }
 
     main {
+      position: relative;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(20rem, 34rem);
       gap: clamp(2rem, 6vw, 6rem);
@@ -27,6 +29,21 @@ import { WeatherCard } from '../weather/weather-card';
       min-height: 100dvh;
       margin: 0 auto;
       padding: clamp(1rem, 4vw, 3rem);
+    }
+
+    .settings-link {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      color: #53627a;
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+
+    .settings-link:hover,
+    .settings-link:focus-visible {
+      color: #167c80;
+      text-decoration: underline;
     }
 
     @media (max-width: 54rem) {

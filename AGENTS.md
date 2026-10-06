@@ -23,6 +23,13 @@ Add a more specific `AGENTS.md` inside `backend/` or `frontend/` only when that 
 - Prefer small, reviewable changes with tests.
 - Fix root causes rather than suppressing errors.
 
+## Decision-making with the user
+
+- Before making an impactful decision, ask the user which direction to take rather than choosing silently.
+- Treat architecture, persistence, scope, security, and behavior changes as impactful decisions.
+- Routine implementation details may follow the existing project conventions without asking.
+- If an impactful decision becomes necessary during implementation, pause and ask before proceeding.
+
 ## Feature and story workflow
 
 Group related product capabilities into feature folders under `docs/features/`. Each feature has a three-letter identifier and a `README.md` created from `docs/features/FEATURE_TEMPLATE.md`. Stories within that feature use identifiers such as `WEA-001` and are created from `docs/features/STORY_TEMPLATE.md`.
@@ -47,6 +54,11 @@ Use the story identifier in related branch names, plan filenames, pull requests,
 - Use Java 25 and Spring Boot.
 - Keep domain logic separate from HTTP controllers and infrastructure adapters.
 - Validate input at system boundaries.
+- Keep Spring MVC controllers thin: bind and validate request data, delegate to the appropriate application service, and return the service result through a small web response mapper. Controllers must not call outbound ports directly, orchestrate use cases, contain business validation, or perform multi-step provider/persistence mapping.
+- Prefer Jakarta Bean Validation annotations for structural boundary validation (`@NotBlank`, `@NotNull`, `@Size`, `@DecimalMin`, `@DecimalMax`, nested `@Valid`) instead of manual checks in controllers. Keep semantic and cross-record validation in the application/domain layer. Preserve intentional valid empty inputs explicitly; do not add `@NotBlank` merely to eliminate a branch when blank has defined behavior.
+- Application services own use-case orchestration and calls to application ports. Outbound adapters own provider-specific parsing and translation. Keep HTTP request/response records in the inbound web adapter package, with one top-level record per file; do not make application services depend on web DTOs.
+- Register ordinary application services and concrete provider adapters with their stereotype annotations (`@Service`, `@Component`, or `@Repository`). Keep provider-specific client construction and property injection in the adapter when it has only one implementation. Use `@Configuration` and `@Bean` for shared infrastructure, conditional/qualified alternatives, or wiring that cannot be expressed cleanly on the component itself—not as a default replacement for component registration.
+- Prefer type-safe `@ConfigurationProperties` records for grouped adapter settings over scattered `@Value` annotations. Register them with `@ConfigurationPropertiesScan`, inject the properties record into the owning adapter, and let that adapter construct its provider-specific client.
 - Use PostgreSQL for persistent application data.
 - Manage schema changes with versioned database migrations once persistence is introduced.
 - Add automated tests for behavior changes.

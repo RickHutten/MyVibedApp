@@ -21,9 +21,9 @@ final class WeatherController {
 
     @GetMapping("/current")
     CurrentWeatherResponse currentWeather(
-            @RequestParam @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
-            @RequestParam @DecimalMin("-180.0") @DecimalMax("180.0") double longitude) {
-        CurrentWeather weather = weatherService.getCurrentWeather(new WeatherLocation(latitude, longitude));
+            @RequestParam @DecimalMin("-90.0") @DecimalMax("90.0") final double latitude,
+            @RequestParam @DecimalMin("-180.0") @DecimalMax("180.0") final double longitude) {
+        final CurrentWeather weather = weatherService.getCurrentWeather(new WeatherLocation(latitude, longitude));
         return CurrentWeatherResponse.from(weather);
     }
 }

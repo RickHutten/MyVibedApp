@@ -1,30 +1,30 @@
 package nl.codestar.myvibedapp.weather.adapters.out.openmeteo;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.sun.net.httpserver.HttpServer;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import nl.codestar.myvibedapp.weather.application.WeatherUnavailableException;
 import nl.codestar.myvibedapp.weather.domain.CurrentWeather;
 import nl.codestar.myvibedapp.weather.domain.WeatherLocation;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.jspecify.annotations.Nullable;
 import org.springframework.http.MediaType;
-import org.springframework.web.client.RestClient;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OpenMeteoWeatherProviderTest {
 
+    private static final int HTTP_OK = 200;
     private static final Validator VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
 
     @Test
@@ -99,10 +99,10 @@ class OpenMeteoWeatherProviderTest {
             "3, 18.4, 248, 101"
     })
     void rejectsProviderValuesOutsideTheirValidRanges(
-            int weatherCode,
-            double windSpeed,
-            double windDirection,
-            int precipitationProbability) throws IOException {
+            final int weatherCode,
+            final double windSpeed,
+            final double windDirection,
+            final int precipitationProbability) throws IOException {
         try (OpenMeteoHttpStub stub = OpenMeteoHttpStub.responding(
                 payloadWithValues("2026-09-04T15:45", weatherCode, 19.7, windSpeed, windDirection,
                         precipitationProbability))) {
@@ -114,10 +114,9 @@ class OpenMeteoWeatherProviderTest {
         }
     }
 
-    private OpenMeteoWeatherProvider providerFor(OpenMeteoHttpStub stub) {
-        return new OpenMeteoWeatherProvider(RestClient.builder()
-                .baseUrl(stub.baseUrl())
-                .build(), VALIDATOR);
+    private OpenMeteoWeatherProvider providerFor(final OpenMeteoHttpStub stub) {
+        return new OpenMeteoWeatherProvider(
+                new OpenMeteoProperties(stub.baseUrl(), Duration.ofSeconds(2), Duration.ofSeconds(3)), VALIDATOR);
     }
 
     private String validPayload() {
@@ -125,12 +124,12 @@ class OpenMeteoWeatherProviderTest {
     }
 
     private String payloadWithValues(
-            String time,
-            int weatherCode,
-            double temperature,
-            double windSpeed,
-            double windDirection,
-            int precipitationProbability) {
+            final String time,
+            final int weatherCode,
+            final double temperature,
+            final double windSpeed,
+            final double windDirection,
+            final int precipitationProbability) {
         return """
                 {
                   "current": {
@@ -153,14 +152,14 @@ class OpenMeteoWeatherProviderTest {
 
         private final HttpServer server;
         private final byte[] responseBody;
-        private volatile @Nullable URI requestUri;
+        private final AtomicReference<Optional<URI>> requestUri = new AtomicReference<>(Optional.empty());
 
-        private OpenMeteoHttpStub(String responseBody, int status) throws IOException {
+        private OpenMeteoHttpStub(final String responseBody, final int status) throws IOException {
             this.responseBody = responseBody.getBytes(StandardCharsets.UTF_8);
             server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
             server.createContext("/v1/forecast", exchange -> {
-                requestUri = exchange.getRequestURI();
-                if (status == 200) {
+                requestUri.set(Optional.of(exchange.getRequestURI()));
+                if (status == HTTP_OK) {
                     exchange.getResponseHeaders().set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
                     exchange.sendResponseHeaders(status, responseBody.length());
                     try (OutputStream output = exchange.getResponseBody()) {
@@ -174,11 +173,11 @@ class OpenMeteoWeatherProviderTest {
             server.start();
         }
 
-        static OpenMeteoHttpStub responding(String responseBody) throws IOException {
+        static OpenMeteoHttpStub responding(final String responseBody) throws IOException {
             return new OpenMeteoHttpStub(responseBody, 200);
         }
 
-        static OpenMeteoHttpStub failing(int status) throws IOException {
+        static OpenMeteoHttpStub failing(final int status) throws IOException {
             return new OpenMeteoHttpStub("", status);
         }
 
@@ -187,7 +186,7 @@ class OpenMeteoWeatherProviderTest {
         }
 
         URI requestUri() {
-            return Objects.requireNonNull(requestUri, "The stub did not receive a request");
+            return requestUri.get().orElseThrow(() -> new AssertionError("The stub did not receive a request"));
         }
 
         @Override

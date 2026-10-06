@@ -13,7 +13,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>MyVibedApp Backend</name>
 	<description>Backend for the personal ambient dashboard</description>
-	<url/>
+	<url>https://github.com/RickHutten/MyVibedApp</url>
 	<licenses>
 		<license/>
 	</licenses>
@@ -24,7 +24,7 @@
 		<connection/>
 		<developerConnection/>
 		<tag/>
-		<url/>
+		<url>https://github.com/RickHutten/MyVibedApp</url>
 	</scm>
 	<properties>
 		<java.version>25</java.version>
@@ -33,6 +33,9 @@
 		<jspecify.version>1.0.0</jspecify.version>
 		<error-prone.version>2.49.0</error-prone.version>
 		<nullaway.version>0.13.4</nullaway.version>
+		<spotless.version>3.10.2</spotless.version>
+		<pmd.version>3.28.0</pmd.version>
+		<pmd.failOnViolation>false</pmd.failOnViolation>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -46,6 +49,31 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-json</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jooq</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jspecify</groupId>
@@ -89,6 +117,16 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<scope>test</scope>
@@ -107,7 +145,7 @@
 						<arg>-XDcompilePolicy=simple</arg>
 						<arg>--should-stop=ifError=FLOW</arg>
 						<arg>-XDaddTypeAnnotationsToSymbol=true</arg>
-						<arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=nl.codestar.myvibedapp -XepOpt:NullAway:JSpecifyMode=true -XepExcludedPaths:(.*/test/java/.*)</arg>
+						<arg>-Xplugin:ErrorProne -Xep:NullAway:ERROR -Xep:UnnecessarilyFullyQualified:ERROR -XepOpt:NullAway:AnnotatedPackages=nl.codestar.myvibedapp -XepOpt:NullAway:JSpecifyMode=true -XepExcludedPaths:(.*/test/java/.*|.*/generated-sources/.*)</arg>
 						<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
 						<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
 						<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
@@ -137,6 +175,117 @@
 						</path>
 					</annotationProcessorPaths>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${spotless.version}</version>
+				<configuration>
+					<java>
+						<includes>
+							<include>src/main/java/**/*.java</include>
+							<include>src/test/java/**/*.java</include>
+						</includes>
+						<importOrder />
+						<shortenFullyQualifiedTypes />
+						<removeUnusedImports />
+					</java>
+				</configuration>
+				<executions>
+					<execution>
+						<id>check-formatting</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-pmd-plugin</artifactId>
+				<version>${pmd.version}</version>
+				<configuration>
+					<rulesets>
+						<ruleset>${project.basedir}/config/pmd-ruleset.xml</ruleset>
+					</rulesets>
+					<targetJdk>25</targetJdk>
+					<includeTests>true</includeTests>
+					<linkXRef>false</linkXRef>
+					<excludeRoots>
+						<excludeRoot>${project.build.directory}/generated-sources</excludeRoot>
+					</excludeRoots>
+					<failOnViolation>${pmd.failOnViolation}</failOnViolation>
+				</configuration>
+				<executions>
+					<execution>
+						<id>pmd-report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>pmd</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>cpd-report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>cpd</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.jooq</groupId>
+				<artifactId>jooq-codegen-maven</artifactId>
+				<version>${jooq.version}</version>
+				<executions>
+					<execution>
+						<id>generate-jooq-sources</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<generator>
+						<database>
+							<name>org.jooq.meta.extensions.ddl.DDLDatabase</name>
+							<properties>
+								<property>
+									<key>scripts</key>
+									<value>src/main/resources/db/migration/*.sql</value>
+								</property>
+								<property>
+									<key>sort</key>
+									<value>flyway</value>
+								</property>
+								<property>
+									<key>defaultNameCase</key>
+									<value>lower</value>
+								</property>
+							</properties>
+							<includes>saved_offices|work_schedule|work_schedule_days</includes>
+						</database>
+						<generate>
+							<daos>false</daos>
+							<pojos>false</pojos>
+							<records>true</records>
+							<javaTimeTypes>true</javaTimeTypes>
+						</generate>
+						<target>
+							<packageName>nl.codestar.myvibedapp.jooq</packageName>
+							<directory>${project.build.directory}/generated-sources/jooq</directory>
+						</target>
+					</generator>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.jooq</groupId>
+						<artifactId>jooq-meta-extensions</artifactId>
+						<version>${jooq.version}</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

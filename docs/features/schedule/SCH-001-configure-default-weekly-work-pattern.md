@@ -28,20 +28,20 @@ As a user, I want to define my normal weekly work schedule and saved office loca
 
 ## Acceptance criteria
 
-- [ ] The user can configure one working-hours range for the whole week.
-- [ ] The user can set each day, including Saturday and Sunday, to office, work from home, or non-working.
-- [ ] A new schedule starts with every day set to non-working.
-- [ ] An office day requires a selected saved office.
-- [ ] Work-from-home and non-working days do not require an office.
-- [ ] The user can add an office with a label and select its location from address suggestions.
-- [ ] The user can edit a saved office.
-- [ ] The user can soft-delete a saved office.
-- [ ] A soft-deleted office cannot be selected for new assignments.
-- [ ] Existing assignments to a soft-deleted office remain valid.
-- [ ] The user can reopen and edit the saved weekly work schedule.
-- [ ] The backend stores the weekly work schedule and saved offices.
-- [ ] The saved configuration remains available after the dashboard is refreshed or reopened.
-- [ ] The frontend does not treat local browser state as the source of truth.
+- [x] The user can configure one working-hours range for the whole week.
+- [x] The user can set each day, including Saturday and Sunday, to office, work from home, or non-working.
+- [x] A new schedule starts with every day set to non-working.
+- [x] An office day requires a selected saved office.
+- [x] Work-from-home and non-working days do not require an office.
+- [x] The user can add an office with a label and select its location from address suggestions.
+- [x] The user can edit a saved office.
+- [x] The user can soft-delete a saved office.
+- [x] A soft-deleted office cannot be selected for new assignments.
+- [x] Existing assignments to a soft-deleted office remain valid.
+- [x] The user can reopen and edit the saved weekly work schedule.
+- [x] The backend stores the weekly work schedule and saved offices.
+- [x] The saved configuration remains available after the dashboard is refreshed or reopened.
+- [x] The frontend does not treat local browser state as the source of truth.
 
 ## Dependencies
 

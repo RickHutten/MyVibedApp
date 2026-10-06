@@ -1,0 +1,191 @@
+<main class="settings" aria-labelledby="page-title">
+  <header class="page-header">
+    <a href="/" class="back-link">← Dashboard</a>
+    <div>
+      <p class="eyebrow">Schedule settings</p>
+      <h1 id="page-title">Your work week</h1>
+      <p class="intro">
+        Tell the dashboard where you usually work. This weekly pattern is the default for your
+        schedule.
+      </p>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <output class="status">Loading your work schedule…</output>
+  } @else if (error() && days().length === 0) {
+    <section class="message error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" (click)="load()">Try again</button>
+    </section>
+  } @else {
+    <form class="card schedule-card" (submit)="$event.preventDefault(); saveSchedule()">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Weekly pattern</p>
+          <h2>Work days</h2>
+        </div>
+        <button class="primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Saving…' : 'Save schedule' }}
+        </button>
+      </div>
+
+      <div class="hours">
+        <label>
+          Work starts
+          <input type="time" [value]="start()" (input)="setStartFromEvent($event)" />
+        </label>
+        <span aria-hidden="true">to</span>
+        <label>
+          Work ends
+          <input type="time" [value]="end()" (input)="setEndFromEvent($event)" />
+        </label>
+      </div>
+
+      <div class="days" aria-label="Days of the week">
+        @for (day of days(); track day.day) {
+          <div class="day-row">
+            <strong>{{ dayLabels[day.day] }}</strong>
+            <label class="sr-only" [for]="day.day + '-status'"
+              >{{ dayLabels[day.day] }} status</label
+            >
+            <select
+              [id]="day.day + '-status'"
+              [value]="day.status"
+              (change)="setStatusFromEvent(day.day, $event)"
+            >
+              @for (status of statuses; track status) {
+                <option [value]="status" [selected]="status === day.status">
+                  {{
+                    status === 'WORK_FROM_HOME'
+                      ? 'Work from home'
+                      : status === 'NON_WORKING'
+                        ? 'Non-working'
+                        : 'Office'
+                  }}
+                </option>
+              }
+            </select>
+            @if (day.status === 'OFFICE') {
+              <label class="sr-only" [for]="day.day + '-office'"
+                >{{ dayLabels[day.day] }} office</label
+              >
+              <select
+                [id]="day.day + '-office'"
+                [value]="day.officeId ?? ''"
+                (change)="setOfficeFromEvent(day.day, $event)"
+              >
+                <option value="" [selected]="!day.officeId">Choose an office</option>
+                @for (office of officesFor(day); track office.id) {
+                  <option [value]="office.id" [selected]="office.id === day.officeId">
+                    {{ office.label }}
+                  </option>
+                }
+              </select>
+            }
+          </div>
+        }
+      </div>
+
+      @if (error()) {
+        <p class="message error" role="alert">{{ error() }}</p>
+      }
+      @if (saved()) {
+        <output class="message success">Schedule saved.</output>
+      }
+    </form>
+
+    <section class="card offices-card" aria-labelledby="offices-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Saved locations</p>
+          <h2 id="offices-title">Offices</h2>
+        </div>
+        @if (editingOfficeId()) {
+          <button type="button" class="quiet" (click)="resetOfficeDraft()">Cancel editing</button>
+        }
+      </div>
+
+      @if (offices().length === 0) {
+        <p class="empty">No offices saved yet. Add one below to use an office day.</p>
+      } @else {
+        <ul class="office-list">
+          @for (office of offices(); track office.id) {
+            <li [class.deleted]="office.deleted">
+              <div>
+                <strong>{{ office.label }}</strong>
+                <span>{{ office.address }}</span>
+                @if (office.deleted) {
+                  <small>Deleted · existing assignments remain valid</small>
+                }
+              </div>
+              @if (!office.deleted) {
+                <div class="office-actions">
+                  <button type="button" class="quiet" (click)="editOffice(office)">Edit</button>
+                  <button type="button" class="danger" (click)="deleteOffice(office)">
+                    Delete
+                  </button>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+
+      <form class="office-form" (submit)="$event.preventDefault(); saveOffice()">
+        <h3>{{ editingOfficeId() ? 'Edit office' : 'Add an office' }}</h3>
+        <label>
+          Label
+          <input
+            type="text"
+            placeholder="Amsterdam office"
+            [value]="officeDraft().label"
+            (input)="updateDraft('label', $event)"
+            required
+          />
+        </label>
+        <label>
+          Search address
+          <input
+            type="search"
+            placeholder="Start typing an address"
+            [value]="officeDraft().address"
+            (input)="searchAddresses($event)"
+            autocomplete="off"
+            required
+          />
+        </label>
+        @if (searching()) {
+          <output class="hint">Searching addresses…</output>
+        }
+        @if (suggestions().length > 0) {
+          <ul class="suggestions" aria-label="Address suggestions">
+            @for (suggestion of suggestions(); track suggestion.address + suggestion.latitude) {
+              <li>
+                <button type="button" (click)="selectSuggestion(suggestion)">
+                  <strong>{{ suggestion.label }}</strong
+                  ><span>{{ suggestion.address }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+        <div class="coordinates">
+          <label
+            >Latitude<input type="number" step="any" [value]="officeDraft().latitude" readonly
+          /></label>
+          <label
+            >Longitude<input type="number" step="any" [value]="officeDraft().longitude" readonly
+          /></label>
+        </div>
+        @if (officeError()) {
+          <p class="message error" role="alert">{{ officeError() }}</p>
+        }
+        <button class="primary" type="submit">
+          {{ editingOfficeId() ? 'Save office' : 'Add office' }}
+        </button>
+        <p class="attribution">Address suggestions by Photon and OpenStreetMap contributors.</p>
+      </form>
+    </section>
+  }
+</main>
