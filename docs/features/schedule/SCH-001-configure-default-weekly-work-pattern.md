@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Status | Approved |
-| Priority | To be decided |
+| Priority | High |
 
 ## Description
 
