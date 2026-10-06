@@ -36,6 +36,8 @@ Do not start story implementation immediately.
 5. Ask the user to review and approve the plan.
 6. Only then implement the story, using tests first for behavior changes.
 
+After implementation and verification, set the implementation plan status to `Implemented`. Once a plan is marked `Implemented`, treat its contents as historical reference and do not edit it; record later conventions in the architecture or agent guidance instead.
+
 Do not silently expand scope while planning or implementing. Put unresolved decisions in the story and stop for user input when they affect behavior.
 
 Use the story identifier in related branch names, plan filenames, pull requests, and commit messages. Example: `WEA-001: add current weather endpoint`. Never create a commit unless explicitly asked.

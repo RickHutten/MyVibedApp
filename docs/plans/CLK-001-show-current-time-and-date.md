@@ -1,7 +1,7 @@
 # Implementation plan: CLK-001 — Show the current time and date
 
 Related story: [CLK-001 — Show the current time and date](../features/clock/CLK-001-show-current-time-and-date.md)
-Status: Approved
+Status: Implemented
 
 ## Approach
 
