@@ -1,0 +1,6 @@
+FROM postgres:18.6
+
+ENV POSTGRES_DB=myvibedapp
+ENV POSTGRES_USER=myvibedapp
+
+EXPOSE 5432

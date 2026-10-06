@@ -1,7 +1,7 @@
 # Implementation plan: SCH-001 — Configure the default weekly work schedule
 
 Related story: [SCH-001 — Configure the default weekly work schedule](../features/schedule/SCH-001-configure-default-weekly-work-pattern.md)
-Status: Approved
+Status: Implemented
 
 ## Approach
 

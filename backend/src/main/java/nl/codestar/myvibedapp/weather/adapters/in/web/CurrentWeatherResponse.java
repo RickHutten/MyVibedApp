@@ -9,7 +9,7 @@ record CurrentWeatherResponse(
         double windSpeedKmh,
         String windDirection) {
 
-    static CurrentWeatherResponse from(CurrentWeather weather) {
+    static CurrentWeatherResponse from(final CurrentWeather weather) {
         return new CurrentWeatherResponse(
                 weather.temperatureC(),
                 weather.condition(),
