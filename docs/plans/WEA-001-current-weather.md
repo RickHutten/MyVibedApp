@@ -57,7 +57,7 @@ The Angular root will remain a small router shell and lazy-load an initial dashb
 
 - Use Open-Meteo because its forecast API provides all WEA-001 fields in one request and does not require a client-side credential. The backend remains the only caller so provider details stay replaceable and later integrations have a consistent application API.
 - Organize the slice into domain, application, and interface layers as required by `backend/AGENTS.md`, without fixing the exact package or file breakdown before implementation. Keep the HTTP and provider adapters separate; expose only the contracts that genuinely cross layer boundaries.
-- Use immutable records for the simple domain, API, and provider DTO values and constructor injection for Spring collaborators. Do not add Lombok or another dependency solely for generated boilerplate; the existing JDK and Spring facilities are sufficient for this slice.
+- Use immutable records for the simple domain, API, and provider DTO values and constructor injection for Spring collaborators. Use Lombok constructor annotations where they remove repetitive dependency-injection boilerplate; do not use Lombok for mutable state or incidental convenience methods.
 - Keep the frontend-to-backend contract provider-neutral; raw WMO codes, provider field names, and wind degrees do not cross the application API boundary.
 - Pass latitude and longitude on each frontend request rather than hard-coding Amsterdam in the backend. This deliberately prepares the same endpoint for WEA-002 while keeping Amsterdam's fixed coordinates owned by the frontend in this story.
 - Represent wind direction as a human-readable compass label from the backend so display semantics are consistent and the Angular component remains presentational.

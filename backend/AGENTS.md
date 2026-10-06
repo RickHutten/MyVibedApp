@@ -8,21 +8,22 @@ These rules apply to `backend/` and supplement the repository-level `AGENTS.md`.
 ./mvnw verify
 ```
 ## Structure
-- Use top-level layers such as `interface`, `application`, `domain`. Use hexagonal clean design.
-- Keep controllers, services, domain models, repositories, and external-provider adapters in their respective layers.
+- Organize backend code by feature. Inside each feature, use `domain`, `application`, and `adapters/in` and `adapters/out` boundaries following hexagonal design.
+- Keep controllers, services, domain models, repositories, and external-provider adapters inside the feature that owns them; shared packages are reserved for stable cross-cutting infrastructure.
 - Keep domain and service code independent of HTTP, persistence, and provider-specific models.
 - Keep classes and methods (package-)private unless another package genuinely needs access.
 - Prefer constructor injection. Do not use field injection. 
-- Prefer lombok for builders, constructors, setters and getters. Prefer builder approach over constructor for >1 arguments. Lombok usage other than these are to be avoided.
+- Prefer Lombok for repetitive dependency-injection constructors, builders, setters, and getters when it meaningfully reduces boilerplate. Use `@RequiredArgsConstructor` for required collaborators; use `@Builder` for genuinely multi-argument or staged construction; use `@Getter` and `@Setter` only when an accessor API is actually needed. Do not use Lombok for records or incidental convenience methods.
 - Prefer immutable values and records for simple request, response, and integration DTOs.
 ## HTTP APIs
 - Expose application endpoints under `/api`.
 - Keep controllers thin: validate and translate HTTP input, delegate behavior, and translate the result.
 - Validate all external input at the boundary with Jakarta Validation where appropriate.
+- Validate external provider response records immediately after deserialization with Jakarta Bean Validation before mapping them into application-owned values. Keep provider-specific semantic checks in the outbound adapter.
 - Return interface-owned response models; never expose persistence entities or third-party provider models.
 - Do not leak stack traces, credentials, provider payloads, or internal exception details to clients.
 ## External integrations
-- Hide each external provider behind an application-owned interface. Implement them in a separate adapter class in the interface layer.
+- Hide each external provider behind an application-owned interface. Implement it as an outbound adapter inside the owning feature.
 - Keep provider URLs and non-secret settings in configuration rather than application logic.
 - Keep credentials outside source control.
 - Configure finite connection and response timeouts.
@@ -39,6 +40,9 @@ These rules apply to `backend/` and supplement the repository-level `AGENTS.md`.
 - For HTTP behavior, prefer tests through the application API, such as `MockMvc`, over direct controller method tests.
 - For provider adapters, test against a controllable HTTP stub and assert the application contract rather than HTTP-client internals.
 - For persistence behavior, use PostgreSQL-compatible integration tests; prefer Testcontainers once database support is introduced.
+- Do not use Mockito or another mocking framework. Use user-defined fakes, controllable HTTP stubs, or test adapters when a double is necessary.
+- Prefer broad application and integration tests over narrow interaction tests; assert observable behavior through public boundaries rather than verifying calls to collaborators.
+- Use composable scenario builders for stateful integration tests. Keep them in test support, give them useful defaults, allow focused overrides for schedules, offices, and other persisted state, and clean persisted state between tests. Keep fixture definitions separate from one scenario persister; prefer named presets and flat composition over deeply nested builders.
 - Add focused unit tests only for complex isolated logic with meaningful input permutations.
 - Avoid tests that assert private methods, internal call order, framework wiring, or incidental implementation details.
 - A refactor that preserves externally observable behavior should not require test changes.
@@ -46,7 +50,7 @@ These rules apply to `backend/` and supplement the repository-level `AGENTS.md`.
 ## Code quality
 - Prefer clear domain names over generic names such as `Manager`, `Helper`, or `Util`.
 - Prefer to use composition over inheritance.
-- Prefer functional style code, avoid `void` functions.
+- Prefer functional style code, avoid `void` functions. Use a functional core for domain decisions and transformations, with an imperative shell at HTTP, persistence, and external-system boundaries.
 - Keep methods focused and side effects explicit.
 - Handle failures at the layer that can add meaningful context; do not catch exceptions merely to log and rethrow them.
 - Use structured logging and never log secrets or precise personal data.

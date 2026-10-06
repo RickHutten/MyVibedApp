@@ -8,6 +8,9 @@ This document describes the initial direction. It is not a finalized design. Rec
 
 - Backend: Spring Boot 4.1.1 on Java 25
 - Build: Maven
+- Backend nullness: JSpecify annotations with NullAway nullness checking enabled in the build
+- Backend programming style: immutable, functional-oriented Java using `Optional` for genuinely absent return values and `Stream` for collection transformations
+- Backend boilerplate: Lombok for required-argument constructors and other generated code only when it meaningfully reduces repetition
 - Frontend: Angular 21 LTS with standalone components and strict TypeScript
 - Database: PostgreSQL
 - Client updates: real-time communication where it provides user value
@@ -27,6 +30,29 @@ This document describes the initial direction. It is not a finalized design. Rec
 ```
 
 The repository is a monorepo. Backend and frontend remain independently buildable and deployable.
+
+## Backend organization and coding style
+
+Backend code is organized by feature rather than by a repository-wide technical layer. Each feature owns its domain, application use cases, and inbound/outbound adapters:
+
+```text
+<feature>/
+├── domain/
+├── application/
+└── adapters/
+    ├── in/
+    └── out/
+```
+
+Feature implementations are hidden behind package-private classes where possible. Cross-feature collaboration uses small public application contracts and application-owned value types; features must not reach into another feature's persistence, controller, or adapter internals. Shared packages are reserved for stable cross-cutting infrastructure such as configuration, HTTP client setup, errors, and time abstractions.
+
+Java code uses JSpecify nullness annotations, with packages marked non-null by default and nullable values explicitly annotated with `@Nullable`. NullAway treats nullness violations as build failures. Domain and application code favors immutable records and values, pure transformations, and explicit return types. Methods return `Optional` when absence is a valid result, rather than returning `null`; required values do not use `Optional`. Streams are preferred for collection transformations, while they are not forced into code where a clear single-expression or domain-specific operation is more readable. Mutable state, in-place collection mutation, and imperative loops require a concrete readability or performance reason. Lombok's `@RequiredArgsConstructor` is preferred for required dependency-injection constructors; `@Builder`, `@Getter`, and `@Setter` are used only when they remove meaningful boilerplate, and records remain preferred for immutable values.
+
+External provider payload records are validated immediately after deserialization at the owning outbound adapter boundary. Use Jakarta Bean Validation annotations for structural requirements such as required fields, nested objects, collection contents, and simple ranges; keep provider-specific semantic checks and transformations in the adapter. Only validated, application-owned values cross into the domain and application layers.
+
+The backend follows a functional-core/imperative-shell style: domain decisions and transformations should be side-effect-free where practical, while HTTP, persistence, and external-provider integration remain explicit side-effecting boundaries.
+
+Integration tests use reusable scenario builders for stateful setup. Fixture definitions create valid sub-entity data, while one scenario persister owns ordering, relationships, and database writes. Scenarios compose through named presets and flat overrides rather than deeply nested builders. Persisted state is cleaned between tests, and scenario setup remains separate from production code; it does not replace assertions through public application boundaries.
 
 ## Initial system boundaries
 
@@ -71,6 +97,5 @@ The dashboard needs timely updates, but the transport has not been selected. Ser
 - Providers for calendar, tasks, mapping, and traffic
 - API style and versioning
 - Server-Sent Events versus WebSockets
-- Database migration tool
 - Refresh, caching, and stale-data policies
 - Secrets management

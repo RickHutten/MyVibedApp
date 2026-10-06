@@ -82,6 +82,9 @@ Run all frontend checks together with `npm run check`.
 - Tests must support refactoring: an internal restructuring that preserves behavior should not require test changes.
 - Add unit tests when isolated logic is complex or has many meaningful input permutations; do not create a unit test for every small change.
 - Prefer a small number of high-value tests over a large suite of narrow, mock-heavy or interaction-heavy tests.
+- Do not use Mockito or other mocking frameworks. When test doubles are needed, write small user-defined fakes, stubs, or test adapters that model the relevant behavior.
+- Prefer broader unit and integration tests over isolated interaction tests; exercise real application boundaries and use user-defined doubles only for external systems or genuinely unavailable dependencies.
+- Build reusable, composable scenario builders for stateful integration-test setup. They should provide sensible defaults and focused overrides so tests describe the state they need without duplicating fixture wiring. Scenario builders persist fixture state directly through test persistence support, and each test must start from cleaned state.
 - For behavior changes, write the appropriate functional test before implementation and confirm that it fails for the expected reason.
 
 ## Completion criteria
