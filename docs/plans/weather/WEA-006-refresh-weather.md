@@ -1,7 +1,7 @@
 # Implementation plan: WEA-006 — Refresh weather automatically
 
 Related story: [WEA-006 — Refresh weather automatically](../../features/weather/WEA-006-refresh-weather.md)
-Status: Draft
+Status: Implemented
 
 ## Approach
 

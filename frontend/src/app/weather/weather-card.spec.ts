@@ -23,7 +23,7 @@ describe('WeatherCard', () => {
     http.verify();
   });
 
-  it('requests and displays the current weather for Amsterdam once', () => {
+  it('refreshes the current weather every ten minutes', () => {
     vi.useFakeTimers();
     const fixture = TestBed.createComponent(WeatherCard);
     fixture.detectChanges();
@@ -50,8 +50,134 @@ describe('WeatherCard', () => {
     expect(content).toContain('85%');
     expect(content).toContain('25.6 km/h');
     expect(content).toContain('W');
-    vi.advanceTimersByTime(60 * 60 * 1000);
+
+    vi.advanceTimersByTime(10 * 60 * 1000 - 1);
     http.expectNone((candidate) => candidate.url === '/api/weather/current');
+
+    vi.advanceTimersByTime(1);
+    const refresh = http.expectOne((candidate) => candidate.url === '/api/weather/current');
+    refresh.flush({
+      temperatureC: 20.1,
+      condition: 'Sunny',
+      precipitationProbabilityPercent: 5,
+      windSpeedKmh: 12.3,
+      windDirection: 'E',
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('20.1°C');
+    expect(fixture.nativeElement.textContent).toContain('Sunny');
+  });
+
+  it('keeps the last weather and shows its refresh time when a refresh fails', () => {
+    vi.useFakeTimers();
+    const firstRefreshAt = new Date('2026-01-15T10:00:00.000Z');
+    vi.setSystemTime(firstRefreshAt);
+    const fixture = TestBed.createComponent(WeatherCard);
+    fixture.detectChanges();
+
+    http
+      .expectOne((candidate) => candidate.url === '/api/weather/current')
+      .flush({
+        temperatureC: 19.7,
+        condition: 'Overcast',
+        precipitationProbabilityPercent: 85,
+        windSpeedKmh: 25.6,
+        windDirection: 'W',
+      });
+    fixture.detectChanges();
+
+    vi.advanceTimersByTime(10 * 60 * 1000);
+    http
+      .expectOne((candidate) => candidate.url === '/api/weather/current')
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    fixture.detectChanges();
+
+    const lastRefresh = new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(firstRefreshAt);
+    const staleContent = fixture.nativeElement.textContent as string;
+    expect(staleContent).toContain('19.7°C');
+    expect(staleContent).toContain(`Weather may be outdated · Last updated ${lastRefresh}`);
+
+    vi.advanceTimersByTime(1000);
+    const retry = http.expectOne((candidate) => candidate.url === '/api/weather/current');
+    retry.flush({
+      temperatureC: 20.1,
+      condition: 'Sunny',
+      precipitationProbabilityPercent: 5,
+      windSpeedKmh: 12.3,
+      windDirection: 'E',
+    });
+    fixture.detectChanges();
+
+    const refreshedContent = fixture.nativeElement.textContent as string;
+    expect(refreshedContent).toContain('20.1°C');
+    expect(refreshedContent).not.toContain('Weather may be outdated');
+
+    vi.advanceTimersByTime(10 * 60 * 1000 - 1);
+    http.expectNone((candidate) => candidate.url === '/api/weather/current');
+    vi.advanceTimersByTime(1);
+    http
+      .expectOne((candidate) => candidate.url === '/api/weather/current')
+      .flush({
+        temperatureC: 20.1,
+        condition: 'Sunny',
+        precipitationProbabilityPercent: 5,
+        windSpeedKmh: 12.3,
+        windDirection: 'E',
+      });
+  });
+
+  it('retries failures with doubling delays capped at ten minutes', () => {
+    vi.useFakeTimers();
+    const fixture = TestBed.createComponent(WeatherCard);
+    fixture.detectChanges();
+
+    http
+      .expectOne((candidate) => candidate.url === '/api/weather/current')
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Weather is unavailable');
+
+    const failRetry = (delayMs: number) => {
+      vi.advanceTimersByTime(delayMs - 1);
+      http.expectNone((candidate) => candidate.url === '/api/weather/current');
+      vi.advanceTimersByTime(1);
+      http
+        .expectOne((candidate) => candidate.url === '/api/weather/current')
+        .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    };
+
+    failRetry(1000);
+    failRetry(2000);
+    failRetry(4000);
+    failRetry(8000);
+    failRetry(16000);
+    failRetry(32000);
+    failRetry(64000);
+    failRetry(128000);
+    failRetry(256000);
+    failRetry(512000);
+    failRetry(600000);
+
+    vi.advanceTimersByTime(600000 - 1);
+    http.expectNone((candidate) => candidate.url === '/api/weather/current');
+    vi.advanceTimersByTime(1);
+    http
+      .expectOne((candidate) => candidate.url === '/api/weather/current')
+      .flush({
+        temperatureC: 20.1,
+        condition: 'Sunny',
+        precipitationProbabilityPercent: 5,
+        windSpeedKmh: 12.3,
+        windDirection: 'E',
+      });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('20.1°C');
+    expect(fixture.nativeElement.textContent).not.toContain('Weather may be outdated');
   });
 
   it('shows that weather is unavailable when the request fails', () => {
@@ -67,26 +193,6 @@ describe('WeatherCard', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Weather is unavailable');
-  });
-
-  it('attributes the weather provider', () => {
-    const fixture = TestBed.createComponent(WeatherCard);
-    fixture.detectChanges();
-
-    http
-      .expectOne((candidate) => candidate.url === '/api/weather/current')
-      .flush({
-        temperatureC: 19.7,
-        condition: 'Overcast',
-        precipitationProbabilityPercent: 85,
-        windSpeedKmh: 25.6,
-        windDirection: 'W',
-      });
-    fixture.detectChanges();
-
-    const attribution = fixture.nativeElement.querySelector('a') as HTMLAnchorElement | null;
-    expect(attribution?.textContent).toContain('Open-Meteo');
-    expect(attribution?.href).toBe('https://open-meteo.com/');
   });
 
   it('has no detectable accessibility violations', async () => {

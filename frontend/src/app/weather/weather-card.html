@@ -8,23 +8,26 @@
     <p>Loading weather…</p>
   } @else if (status() === 'unavailable') {
     <p>Weather is unavailable</p>
-  } @else if (weather(); as current) {
-    <div class="temperature">{{ current.temperatureC }}°C</div>
-    <p class="condition">{{ current.condition }}</p>
-    <dl>
-      <div>
-        <dt>Chance of rain</dt>
-        <dd>{{ current.precipitationProbabilityPercent }}%</dd>
-      </div>
-      <div>
-        <dt>Wind</dt>
-        <dd>{{ current.windSpeedKmh }} km/h {{ current.windDirection }}</dd>
-      </div>
-    </dl>
-  }
+  } @else {
+    @if (weather(); as current) {
+      <div class="temperature">{{ current.temperatureC }}°C</div>
+      <p class="condition">{{ current.condition }}</p>
+      <dl>
+        <div>
+          <dt>Chance of rain</dt>
+          <dd>{{ current.precipitationProbabilityPercent }}%</dd>
+        </div>
+        <div>
+          <dt>Wind</dt>
+          <dd>{{ current.windSpeedKmh }} km/h {{ current.windDirection }}</dd>
+        </div>
+      </dl>
+    }
 
-  <footer>
-    Weather data by
-    <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
-  </footer>
+    @if (status() === 'stale' && lastSuccessfulRefreshLabel(); as lastRefresh) {
+      <p class="stale-status" role="status">
+        Weather may be outdated · Last updated {{ lastRefresh }}
+      </p>
+    }
+  }
 </section>

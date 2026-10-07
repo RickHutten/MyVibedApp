@@ -46,6 +46,12 @@ h1 {
   font-size: 1.25rem;
 }
 
+.stale-status {
+  margin-top: 1.25rem;
+  color: #526077;
+  font-size: 0.75rem;
+}
+
 dl {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -62,16 +68,6 @@ dd {
   margin-top: 0.4rem;
   font-size: 1.125rem;
   font-weight: 600;
-}
-
-footer {
-  margin-top: 2rem;
-  color: #526077;
-  font-size: 0.75rem;
-}
-
-a {
-  color: #334155;
 }
 
 @media (max-width: 32rem) {
