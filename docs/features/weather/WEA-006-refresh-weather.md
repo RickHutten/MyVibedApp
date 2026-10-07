@@ -56,3 +56,4 @@ The dashboard will request updated weather every 10 minutes while it remains ope
 - The 10-minute interval applies while the dashboard is open; refresh behavior when the page is hidden or suspended will be decided in the implementation plan.
 - Retry delays double after each failed attempt, beginning at 1 second (1s, 2s, 4s, …) and capping at 10 minutes; the exact timer behavior will be decided in the implementation plan.
 - Stale weather is retained in memory only and is not persisted after the dashboard is closed.
+- The stale indicator is a small, muted disclaimer: “Weather may be outdated · Last updated [date and time]”.
