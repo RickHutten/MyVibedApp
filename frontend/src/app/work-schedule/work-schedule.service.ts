@@ -3,6 +3,9 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 export type ScheduleStatus = 'OFFICE' | 'WORK_FROM_HOME' | 'NON_WORKING';
+export type RecurrenceLevel = 'DAYS' | 'WEEKS' | 'MONTHS';
+export type MonthlyPatternType = 'CALENDAR_DAY' | 'WEEKDAY_OCCURRENCE';
+export type MonthlyOccurrence = 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'LAST';
 
 export interface WorkingHours {
   start: string;
@@ -44,6 +47,27 @@ export interface AddressSuggestion {
   longitude: number;
 }
 
+export interface MonthlyPattern {
+  type: MonthlyPatternType;
+  calendarDay: number | null;
+  weekday: string | null;
+  occurrence: MonthlyOccurrence | null;
+}
+
+export interface RecurringRule {
+  id: string;
+  level: RecurrenceLevel;
+  interval: number;
+  weekdays: string[];
+  monthlyPattern: MonthlyPattern | null;
+  startDate: string;
+  endDate: string | null;
+  status: ScheduleStatus;
+  officeId: string | null;
+}
+
+export type RecurringRuleInput = Omit<RecurringRule, 'id'>;
+
 @Injectable({ providedIn: 'root' })
 export class WorkScheduleService {
   private readonly http = inject(HttpClient);
@@ -70,5 +94,21 @@ export class WorkScheduleService {
 
   searchAddresses(query: string): Observable<AddressSuggestion[]> {
     return this.http.get<AddressSuggestion[]>('/api/offices/search', { params: { query } });
+  }
+
+  getRecurringRules(): Observable<RecurringRule[]> {
+    return this.http.get<RecurringRule[]>('/api/work-schedule/recurring-rules');
+  }
+
+  addRecurringRule(rule: RecurringRuleInput): Observable<RecurringRule> {
+    return this.http.post<RecurringRule>('/api/work-schedule/recurring-rules', rule);
+  }
+
+  editRecurringRule(id: string, rule: RecurringRuleInput): Observable<RecurringRule> {
+    return this.http.put<RecurringRule>(`/api/work-schedule/recurring-rules/${id}`, rule);
+  }
+
+  deleteRecurringRule(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/work-schedule/recurring-rules/${id}`);
   }
 }
