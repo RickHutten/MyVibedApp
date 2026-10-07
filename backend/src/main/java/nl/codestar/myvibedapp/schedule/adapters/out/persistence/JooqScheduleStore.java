@@ -1,5 +1,6 @@
 package nl.codestar.myvibedapp.schedule.adapters.out.persistence;
 
+import static nl.codestar.myvibedapp.jooq.Tables.RECURRING_SCHEDULE_RULES;
 import static nl.codestar.myvibedapp.jooq.Tables.SAVED_OFFICES;
 import static nl.codestar.myvibedapp.jooq.Tables.WORK_SCHEDULE;
 import static nl.codestar.myvibedapp.jooq.Tables.WORK_SCHEDULE_DAYS;
@@ -12,6 +13,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import nl.codestar.myvibedapp.jooq.tables.records.WorkScheduleDaysRecord;
 import nl.codestar.myvibedapp.schedule.application.ScheduleStore;
+import nl.codestar.myvibedapp.schedule.domain.RecurringRule;
 import nl.codestar.myvibedapp.schedule.domain.SavedOffice;
 import nl.codestar.myvibedapp.schedule.domain.ScheduleDay;
 import nl.codestar.myvibedapp.schedule.domain.ScheduleStatus;
@@ -98,5 +100,51 @@ class JooqScheduleStore implements ScheduleStore {
                 .set(SAVED_OFFICES.DELETED, office.deleted())
                 .execute();
         return office;
+    }
+
+    @Override
+    public List<RecurringRule> recurringRules() {
+        return dsl.selectFrom(RECURRING_SCHEDULE_RULES)
+                .orderBy(RECURRING_SCHEDULE_RULES.START_DATE, RECURRING_SCHEDULE_RULES.ID)
+                .fetch(JooqRecurringRuleMapper::from);
+    }
+
+    @Override
+    public RecurringRule saveRecurringRule(final RecurringRule rule) {
+        dsl.insertInto(RECURRING_SCHEDULE_RULES)
+                .set(RECURRING_SCHEDULE_RULES.ID, rule.id())
+                .set(RECURRING_SCHEDULE_RULES.RECURRENCE_LEVEL, rule.level().name())
+                .set(RECURRING_SCHEDULE_RULES.INTERVAL_VALUE, rule.interval())
+                .set(RECURRING_SCHEDULE_RULES.WEEKDAY_MASK, JooqRecurringRuleMapper.weekdayMask(rule))
+                .set(RECURRING_SCHEDULE_RULES.MONTHLY_PATTERN_TYPE, JooqRecurringRuleMapper.monthlyPatternType(rule))
+                .set(RECURRING_SCHEDULE_RULES.MONTHLY_CALENDAR_DAY, JooqRecurringRuleMapper.calendarDay(rule))
+                .set(RECURRING_SCHEDULE_RULES.MONTHLY_WEEKDAY, JooqRecurringRuleMapper.monthlyWeekday(rule))
+                .set(RECURRING_SCHEDULE_RULES.MONTHLY_OCCURRENCE, JooqRecurringRuleMapper.monthlyOccurrence(rule))
+                .set(RECURRING_SCHEDULE_RULES.START_DATE, rule.startDate())
+                .set(RECURRING_SCHEDULE_RULES.END_DATE, rule.endDate())
+                .set(RECURRING_SCHEDULE_RULES.STATUS, rule.status().name())
+                .set(RECURRING_SCHEDULE_RULES.OFFICE_ID, rule.officeId())
+                .onConflict(RECURRING_SCHEDULE_RULES.ID)
+                .doUpdate()
+                .set(RECURRING_SCHEDULE_RULES.RECURRENCE_LEVEL, rule.level().name())
+                .set(RECURRING_SCHEDULE_RULES.INTERVAL_VALUE, rule.interval())
+                .set(RECURRING_SCHEDULE_RULES.WEEKDAY_MASK, JooqRecurringRuleMapper.weekdayMask(rule))
+                .set(RECURRING_SCHEDULE_RULES.MONTHLY_PATTERN_TYPE, JooqRecurringRuleMapper.monthlyPatternType(rule))
+                .set(RECURRING_SCHEDULE_RULES.MONTHLY_CALENDAR_DAY, JooqRecurringRuleMapper.calendarDay(rule))
+                .set(RECURRING_SCHEDULE_RULES.MONTHLY_WEEKDAY, JooqRecurringRuleMapper.monthlyWeekday(rule))
+                .set(RECURRING_SCHEDULE_RULES.MONTHLY_OCCURRENCE, JooqRecurringRuleMapper.monthlyOccurrence(rule))
+                .set(RECURRING_SCHEDULE_RULES.START_DATE, rule.startDate())
+                .set(RECURRING_SCHEDULE_RULES.END_DATE, rule.endDate())
+                .set(RECURRING_SCHEDULE_RULES.STATUS, rule.status().name())
+                .set(RECURRING_SCHEDULE_RULES.OFFICE_ID, rule.officeId())
+                .execute();
+        return rule;
+    }
+
+    @Override
+    public void deleteRecurringRule(final UUID id) {
+        dsl.deleteFrom(RECURRING_SCHEDULE_RULES)
+                .where(RECURRING_SCHEDULE_RULES.ID.eq(id))
+                .execute();
     }
 }

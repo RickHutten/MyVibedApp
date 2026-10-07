@@ -28,21 +28,21 @@ As a user, I want to configure recurring exceptions to my default work schedule 
 
 ## Acceptance criteria
 
-- [ ] The user can add, edit, and delete a recurring rule from schedule settings.
-- [ ] The user can configure a rule to repeat every _x_ days.
-- [ ] The user can configure a rule to repeat every _x_ weeks and select one or more weekdays.
-- [ ] The user can configure a rule to repeat every _x_ months on a calendar day.
-- [ ] The user can configure a rule to repeat every _x_ months on the first, second, third, fourth, or last occurrence of a selected weekday.
-- [ ] A recurring rule requires a start date, and the start date anchors when its recurrence cycle begins.
-- [ ] The user can leave the end date unset or set an end date that is inclusive.
-- [ ] A monthly calendar-day rule skips a month when that month does not contain the configured day.
-- [ ] The user can set the rule outcome to office, work from home, or non-working.
-- [ ] An office outcome requires one of the saved offices from [SCH-001](./SCH-001-configure-default-weekly-work-pattern.md).
-- [ ] A rule does not affect dates before its start date or after its inclusive end date.
-- [ ] The system rejects a rule when it overlaps another rule at the same recurrence level during any of their active dates, and identifies the conflicting rule.
-- [ ] Rules at different recurrence levels may overlap; an applicable monthly rule overrides an applicable weekly rule, and an applicable weekly rule overrides an applicable daily rule.
-- [ ] Deleting or editing a rule causes the next applicable rule, including the SCH-001 default schedule, to be used automatically.
-- [ ] A rule remains visible in schedule settings after its end date and is not deleted automatically.
+- [x] The user can add, edit, and delete a recurring rule from schedule settings.
+- [x] The user can configure a rule to repeat every _x_ days.
+- [x] The user can configure a rule to repeat every _x_ weeks and select one or more weekdays.
+- [x] The user can configure a rule to repeat every _x_ months on a calendar day.
+- [x] The user can configure a rule to repeat every _x_ months on the first, second, third, fourth, or last occurrence of a selected weekday.
+- [x] A recurring rule requires a start date, and the start date anchors when its recurrence cycle begins.
+- [x] The user can leave the end date unset or set an end date that is inclusive.
+- [x] A monthly calendar-day rule skips a month when that month does not contain the configured day.
+- [x] The user can set the rule outcome to office, work from home, or non-working.
+- [x] An office outcome requires one of the saved offices from [SCH-001](./SCH-001-configure-default-weekly-work-pattern.md).
+- [x] A rule does not affect dates before its start date or after its inclusive end date.
+- [x] The system rejects a rule when it overlaps another rule at the same recurrence level during any of their active dates, and identifies the conflicting rule.
+- [x] Rules at different recurrence levels may overlap; an applicable monthly rule overrides an applicable weekly rule, and an applicable weekly rule overrides an applicable daily rule.
+- [x] Deleting or editing a rule causes the next applicable rule, including the SCH-001 default schedule, to be used automatically.
+- [x] A rule remains visible in schedule settings after its end date and is not deleted automatically.
 
 ## Dependencies
 

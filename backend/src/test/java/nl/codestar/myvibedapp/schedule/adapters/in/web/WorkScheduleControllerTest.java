@@ -56,9 +56,8 @@ class WorkScheduleControllerTest {
 
     @BeforeEach
     void resetDatabase() {
-        jdbcTemplate.execute("truncate table work_schedule_days");
+        jdbcTemplate.execute("truncate table recurring_schedule_rules, work_schedule_days, saved_offices");
         jdbcTemplate.execute("truncate table work_schedule");
-        jdbcTemplate.execute("truncate table saved_offices");
         jdbcTemplate.execute("insert into work_schedule (id, start_time, end_time) values (true, '09:00', '17:00')");
         jdbcTemplate.execute("insert into work_schedule_days (day_of_week, status, office_id) "
                 + "select day_number, 'NON_WORKING', null from generate_series(1, 7) as day_number");

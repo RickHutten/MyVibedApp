@@ -1,7 +1,7 @@
 # Implementation plan: SCH-002 — Configure recurring schedule rules
 
 Related story: [SCH-002 — Configure recurring schedule rules](../../features/schedule/SCH-002-configure-recurring-schedule-rules.md)
-Status: Draft
+Status: Implemented
 
 ## Approach
 

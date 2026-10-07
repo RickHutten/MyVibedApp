@@ -187,5 +187,236 @@
         <p class="attribution">Address suggestions by Photon and OpenStreetMap contributors.</p>
       </form>
     </section>
+
+    <section class="card rules-card" aria-labelledby="rules-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Recurring exceptions</p>
+          <h2 id="rules-title">Rules</h2>
+        </div>
+        @if (editingRuleId()) {
+          <button type="button" class="quiet" (click)="resetRuleDraft()">Cancel editing</button>
+        }
+      </div>
+
+      @if (recurringRules().length === 0) {
+        <p class="empty">
+          No recurring rules yet. Add one to change your default week automatically.
+        </p>
+      } @else {
+        <ul class="rule-list">
+          @for (rule of recurringRules(); track rule.id) {
+            <li>
+              <div>
+                <strong>{{ ruleLabel(rule) }}</strong>
+                @if (officeLabel(rule); as officeLabel) {
+                  <span>At {{ officeLabel }}</span>
+                }
+                @if (rule.level === 'WEEKS') {
+                  <span>{{ rule.weekdays.join(', ') }}</span>
+                }
+                @if (rule.level === 'MONTHS' && rule.monthlyPattern?.type === 'CALENDAR_DAY') {
+                  <span>On day {{ rule.monthlyPattern?.calendarDay }} of the month</span>
+                }
+                @if (
+                  rule.level === 'MONTHS' && rule.monthlyPattern?.type === 'WEEKDAY_OCCURRENCE'
+                ) {
+                  <span
+                    >{{ monthlyOccurrenceLabel(rule.monthlyPattern?.occurrence ?? null) }}
+                    {{ weekdayLabel(rule.monthlyPattern?.weekday ?? null) }} of the month</span
+                  >
+                }
+                <small
+                  >{{ rule.startDate
+                  }}{{ rule.endDate ? ' – ' + rule.endDate : ' · No end date' }}</small
+                >
+              </div>
+              <div class="office-actions">
+                <button type="button" class="quiet" (click)="editRecurringRule(rule)">Edit</button>
+                <button type="button" class="danger" (click)="deleteRecurringRule(rule)">
+                  Delete
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+
+      <form class="rule-form" (submit)="$event.preventDefault(); saveRecurringRule()">
+        <h3>{{ editingRuleId() ? 'Edit recurring rule' : 'Add a recurring rule' }}</h3>
+        <div class="rule-grid">
+          <div class="recurrence-picker">
+            <span>Every</span>
+            <label class="sr-only" for="rule-interval">Interval</label>
+            <input
+              type="number"
+              id="rule-interval"
+              min="1"
+              step="1"
+              [value]="ruleDraft().interval"
+              (input)="setRuleField('interval', +$any($event.target).value)"
+            />
+            <label class="sr-only" for="rule-level">Recurrence unit</label>
+            <select
+              id="rule-level"
+              [value]="ruleDraft().level"
+              (change)="setRuleLevel($any($event.target).value)"
+            >
+              @for (level of recurrenceLevels; track level) {
+                <option [value]="level" [selected]="level === ruleDraft().level">
+                  {{ recurrenceUnit(level, ruleDraft().interval) }}
+                </option>
+              }
+            </select>
+          </div>
+          <label>
+            Starts
+            <input
+              type="date"
+              [value]="ruleDraft().startDate"
+              (input)="setRuleField('startDate', $any($event.target).value)"
+              required
+            />
+          </label>
+          <label>
+            Ends (optional)
+            <input
+              type="date"
+              [value]="ruleDraft().endDate ?? ''"
+              (input)="setRuleField('endDate', $any($event.target).value || null)"
+            />
+          </label>
+        </div>
+
+        @if (ruleDraft().level === 'WEEKS') {
+          <fieldset>
+            <legend>Weekdays</legend>
+            <div class="weekday-grid">
+              @for (day of ruleWeekdays; track day) {
+                <label class="check-label">
+                  <input
+                    type="checkbox"
+                    [checked]="ruleDraft().weekdays.includes(day)"
+                    (change)="toggleRuleWeekday(day)"
+                  />
+                  {{ dayLabels[day] }}
+                </label>
+              }
+            </div>
+          </fieldset>
+        }
+
+        @if (ruleDraft().level === 'MONTHS') {
+          <fieldset>
+            <legend>Monthly pattern</legend>
+            <div class="rule-grid">
+              <label>
+                Pattern
+                <select
+                  [value]="ruleDraft().monthlyPattern?.type"
+                  (change)="setMonthlyPatternField('type', $any($event.target).value)"
+                >
+                  @for (type of monthlyPatternTypes; track type) {
+                    <option [value]="type" [selected]="type === ruleDraft().monthlyPattern?.type">
+                      {{ type === 'CALENDAR_DAY' ? 'Calendar day' : 'Weekday occurrence' }}
+                    </option>
+                  }
+                </select>
+              </label>
+              @if (ruleDraft().monthlyPattern?.type === 'CALENDAR_DAY') {
+                <label>
+                  Calendar day
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    [value]="ruleDraft().monthlyPattern?.calendarDay ?? 1"
+                    (input)="setMonthlyPatternField('calendarDay', +$any($event.target).value)"
+                  />
+                </label>
+              } @else {
+                <label>
+                  Occurrence
+                  <select
+                    name="rule-occurrence"
+                    [value]="ruleDraft().monthlyPattern?.occurrence"
+                    (change)="setMonthlyPatternField('occurrence', $any($event.target).value)"
+                  >
+                    @for (occurrence of monthlyOccurrences; track occurrence) {
+                      <option
+                        [value]="occurrence"
+                        [selected]="occurrence === ruleDraft().monthlyPattern?.occurrence"
+                      >
+                        {{ monthlyOccurrenceLabel(occurrence) }}
+                      </option>
+                    }
+                  </select>
+                </label>
+                <label>
+                  Weekday
+                  <select
+                    [value]="ruleDraft().monthlyPattern?.weekday"
+                    (change)="setMonthlyPatternField('weekday', $any($event.target).value)"
+                  >
+                    @for (day of ruleWeekdays; track day) {
+                      <option
+                        [value]="day"
+                        [selected]="day === ruleDraft().monthlyPattern?.weekday"
+                      >
+                        {{ dayLabels[day] }}
+                      </option>
+                    }
+                  </select>
+                </label>
+              }
+            </div>
+          </fieldset>
+        }
+
+        <div class="rule-grid">
+          <label>
+            Location
+            <select
+              name="rule-location"
+              [value]="ruleDraft().status"
+              (change)="setRuleStatus($any($event.target).value)"
+            >
+              @for (status of statuses; track status) {
+                <option [value]="status" [selected]="status === ruleDraft().status">
+                  {{ statusLabel(status) }}
+                </option>
+              }
+            </select>
+          </label>
+          @if (ruleDraft().status === 'OFFICE') {
+            <label>
+              Office
+              <select
+                name="rule-office"
+                [value]="ruleDraft().officeId ?? ''"
+                (change)="setRuleField('officeId', $any($event.target).value || null)"
+              >
+                @if (activeOffices().length === 0) {
+                  <option value="" disabled>No saved locations available</option>
+                } @else {
+                  <option value="">Choose an office</option>
+                }
+                @for (office of activeOffices(); track office.id) {
+                  <option [value]="office.id" [selected]="office.id === ruleDraft().officeId">
+                    {{ office.label }}
+                  </option>
+                }
+              </select>
+            </label>
+          }
+        </div>
+        @if (ruleError()) {
+          <p class="message error" role="alert">{{ ruleError() }}</p>
+        }
+        <button class="primary" type="submit" [disabled]="ruleSaving()">
+          {{ ruleSaving() ? 'Saving…' : editingRuleId() ? 'Save rule' : 'Add rule' }}
+        </button>
+      </form>
+    </section>
   }
 </main>

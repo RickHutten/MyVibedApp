@@ -35,7 +35,7 @@
 		<nullaway.version>0.13.4</nullaway.version>
 		<spotless.version>3.10.2</spotless.version>
 		<pmd.version>3.28.0</pmd.version>
-		<pmd.failOnViolation>false</pmd.failOnViolation>
+		<pmd.failOnViolation>true</pmd.failOnViolation>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -265,7 +265,7 @@
 									<value>lower</value>
 								</property>
 							</properties>
-							<includes>saved_offices|work_schedule|work_schedule_days</includes>
+							<includes>saved_offices|work_schedule|work_schedule_days|recurring_schedule_rules</includes>
 						</database>
 						<generate>
 							<daos>false</daos>

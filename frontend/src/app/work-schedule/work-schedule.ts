@@ -4,7 +4,12 @@ import { FormsModule } from '@angular/forms';
 
 import {
   AddressSuggestion,
+  MonthlyOccurrence,
+  MonthlyPatternType,
   OfficeInput,
+  RecurrenceLevel,
+  RecurringRule,
+  RecurringRuleInput,
   SavedOffice,
   ScheduleDay,
   ScheduleStatus,
@@ -12,6 +17,25 @@ import {
 } from './work-schedule.service';
 
 const statuses: readonly ScheduleStatus[] = ['OFFICE', 'WORK_FROM_HOME', 'NON_WORKING'];
+const weekdays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+const occurrences: readonly MonthlyOccurrence[] = ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'LAST'];
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function emptyRule(): RecurringRuleInput {
+  return {
+    level: 'DAYS',
+    interval: 1,
+    weekdays: [],
+    monthlyPattern: null,
+    startDate: today(),
+    endDate: null,
+    status: 'WORK_FROM_HOME',
+    officeId: null,
+  };
+}
 
 @Component({
   selector: 'app-work-schedule',
@@ -39,9 +63,21 @@ export class WorkSchedule implements OnInit {
   });
   readonly locationSelected = signal(false);
   readonly editingOfficeId = signal<string | null>(null);
+  readonly recurringRules = signal<RecurringRule[]>([]);
+  readonly ruleDraft = signal<RecurringRuleInput>(emptyRule());
+  readonly ruleSaving = signal(false);
+  readonly ruleError = signal<string | null>(null);
+  readonly editingRuleId = signal<string | null>(null);
   private searchSequence = 0;
 
   readonly statuses = statuses;
+  readonly recurrenceLevels: readonly RecurrenceLevel[] = ['DAYS', 'WEEKS', 'MONTHS'];
+  readonly ruleWeekdays = weekdays;
+  readonly monthlyPatternTypes: readonly MonthlyPatternType[] = [
+    'CALENDAR_DAY',
+    'WEEKDAY_OCCURRENCE',
+  ];
+  readonly monthlyOccurrences = occurrences;
   readonly dayLabels: Record<string, string> = {
     MONDAY: 'Monday',
     TUESDAY: 'Tuesday',
@@ -68,6 +104,7 @@ export class WorkSchedule implements OnInit {
         this.days.set(schedule.days);
         this.offices.set(schedule.offices);
         this.loading.set(false);
+        this.loadRecurringRules();
       },
       error: () => {
         this.error.set('The work schedule could not be loaded.');
@@ -76,14 +113,186 @@ export class WorkSchedule implements OnInit {
     });
   }
 
+  loadRecurringRules(): void {
+    this.service.getRecurringRules().subscribe({
+      next: (rules) => this.recurringRules.set(rules),
+      error: () => this.ruleError.set('Recurring rules could not be loaded.'),
+    });
+  }
+
+  setRuleField<K extends keyof RecurringRuleInput>(field: K, value: RecurringRuleInput[K]): void {
+    this.ruleError.set(null);
+    this.ruleDraft.update((draft) => ({ ...draft, [field]: value }));
+  }
+
+  setRuleLevel(level: RecurrenceLevel): void {
+    this.ruleDraft.update((draft) => ({
+      ...draft,
+      level,
+      weekdays: level === 'WEEKS' ? draft.weekdays : [],
+      monthlyPattern:
+        level === 'MONTHS'
+          ? (draft.monthlyPattern ?? {
+              type: 'CALENDAR_DAY',
+              calendarDay: 1,
+              weekday: null,
+              occurrence: null,
+            })
+          : null,
+    }));
+  }
+
+  toggleRuleWeekday(day: string): void {
+    const selected = this.ruleDraft().weekdays;
+    this.setRuleField(
+      'weekdays',
+      selected.includes(day) ? selected.filter((value) => value !== day) : [...selected, day],
+    );
+  }
+
+  setMonthlyPatternField(
+    field: 'type' | 'calendarDay' | 'weekday' | 'occurrence',
+    value: string | number | null,
+  ): void {
+    const current = this.ruleDraft().monthlyPattern ?? {
+      type: 'CALENDAR_DAY' as MonthlyPatternType,
+      calendarDay: 1,
+      weekday: null,
+      occurrence: null,
+    };
+    const next = { ...current, [field]: value };
+    if (field === 'type') {
+      next.calendarDay = value === 'CALENDAR_DAY' ? 1 : null;
+      next.weekday = value === 'WEEKDAY_OCCURRENCE' ? 'MONDAY' : null;
+      next.occurrence = value === 'WEEKDAY_OCCURRENCE' ? 'FIRST' : null;
+    }
+    this.setRuleField('monthlyPattern', next);
+  }
+
+  setRuleStatus(status: ScheduleStatus): void {
+    this.setRuleField('status', status);
+    if (status !== 'OFFICE') {
+      this.setRuleField('officeId', null);
+    }
+  }
+
+  saveRecurringRule(): void {
+    const draft = this.ruleDraft();
+    if (draft.level === 'WEEKS' && draft.weekdays.length === 0) {
+      this.ruleError.set('Choose at least one weekday.');
+      return;
+    }
+    if (draft.status === 'OFFICE' && !draft.officeId) {
+      this.ruleError.set('Choose a saved office.');
+      return;
+    }
+    this.ruleSaving.set(true);
+    this.ruleError.set(null);
+    const editingId = this.editingRuleId();
+    const request = editingId
+      ? this.service.editRecurringRule(editingId, draft)
+      : this.service.addRecurringRule(draft);
+    request.subscribe({
+      next: (rule) => {
+        this.recurringRules.update((rules) =>
+          editingId
+            ? rules.map((current) => (current.id === rule.id ? rule : current))
+            : [...rules, rule],
+        );
+        this.resetRuleDraft();
+        this.ruleSaving.set(false);
+      },
+      error: (response: HttpErrorResponse) => {
+        this.ruleError.set(response.error?.detail ?? 'The recurring rule could not be saved.');
+        this.ruleSaving.set(false);
+      },
+    });
+  }
+
+  editRecurringRule(rule: RecurringRule): void {
+    this.editingRuleId.set(rule.id);
+    this.ruleDraft.set({
+      level: rule.level,
+      interval: rule.interval,
+      weekdays: [...rule.weekdays],
+      monthlyPattern: rule.monthlyPattern ? { ...rule.monthlyPattern } : null,
+      startDate: rule.startDate,
+      endDate: rule.endDate,
+      status: rule.status,
+      officeId: rule.officeId,
+    });
+    this.ruleError.set(null);
+  }
+
+  deleteRecurringRule(rule: RecurringRule): void {
+    this.service.deleteRecurringRule(rule.id).subscribe({
+      next: () =>
+        this.recurringRules.update((rules) => rules.filter((current) => current.id !== rule.id)),
+      error: () => this.ruleError.set('The recurring rule could not be deleted.'),
+    });
+  }
+
+  resetRuleDraft(): void {
+    this.editingRuleId.set(null);
+    this.ruleDraft.set(emptyRule());
+    this.ruleError.set(null);
+  }
+
+  ruleLabel(rule: RecurringRule): string {
+    const cadence = this.recurrenceUnit(rule.level, rule.interval);
+    return `Every ${rule.interval} ${cadence} · ${this.statusLabel(rule.status)}`;
+  }
+
+  recurrenceUnit(level: RecurrenceLevel, interval: number): string {
+    let unit: string;
+    if (level === 'DAYS') {
+      unit = 'day';
+    } else if (level === 'WEEKS') {
+      unit = 'week';
+    } else {
+      unit = 'month';
+    }
+    return interval === 1 ? unit : `${unit}s`;
+  }
+
+  monthlyOccurrenceLabel(occurrence: MonthlyOccurrence | null): string {
+    return occurrence ? occurrence.charAt(0) + occurrence.slice(1).toLowerCase() : '';
+  }
+
+  weekdayLabel(day: string | null): string {
+    return day ? (this.dayLabels[day] ?? day) : '';
+  }
+
+  statusLabel(status: ScheduleStatus): string {
+    if (status === 'WORK_FROM_HOME') {
+      return 'Work from home';
+    }
+    if (status === 'NON_WORKING') {
+      return 'Non-working';
+    }
+    return 'Office';
+  }
+
+  officeLabel(rule: RecurringRule): string | null {
+    if (rule.status !== 'OFFICE' || !rule.officeId) {
+      return null;
+    }
+    return (
+      this.offices().find((office) => office.id === rule.officeId)?.label ??
+      'Saved location unavailable'
+    );
+  }
+
   setDayStatus(day: string, status: ScheduleStatus): void {
     this.saved.set(false);
     this.days.update((days) =>
-      days.map((current) =>
-        current.day === day
-          ? { ...current, status, officeId: status === 'OFFICE' ? current.officeId : null }
-          : current,
-      ),
+      days.map((current) => {
+        if (current.day !== day) {
+          return current;
+        }
+        const officeId = status === 'OFFICE' ? current.officeId : null;
+        return { ...current, status, officeId };
+      }),
     );
   }
 
