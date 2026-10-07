@@ -20,27 +20,27 @@ Replace the existing framework HTTP test double with a small user-defined contro
 
 1. **Define the clean backend foundation**
    - Change: Establish the feature-oriented package structure and identify the small set of production behavior to retain: the weather endpoint, weather domain values, the application weather port, the Open-Meteo adapter, and the application entry point. Remove starter-only endpoints and generic smoke tests from the target design.
-   - Files: `backend/src/main/java/nl/codestar/myvibedapp/`, `backend/src/test/java/nl/codestar/myvibedapp/`
+   - Files: `../../../backend/src/main/java/nl/codestar/myvibedapp`, `backend/src/test/java/nl/codestar/myvibedapp/`
 
 2. **Rewrite weather into a feature-oriented package**
    - Change: Create clean production classes under `weather/domain`, `weather/application`, `weather/adapters/in/web`, and `weather/adapters/out/openmeteo`. Rewrite package declarations, application contracts, adapters, DTO mapping, and tests rather than preserving the old layer-oriented implementation. Keep public types limited to deliberate application contracts and HTTP models.
-   - Files: `backend/src/main/java/nl/codestar/myvibedapp/weather/`, `backend/src/test/java/nl/codestar/myvibedapp/weather/`
+   - Files: `../../../backend/src/main/java/nl/codestar/myvibedapp/weather`, `backend/src/test/java/nl/codestar/myvibedapp/weather/`
 
 3. **Enforce JSpecify nullness with NullAway**
    - Change: Add the JSpecify annotation dependency and configure NullAway through the Maven compiler/annotation-processing setup. Mark the weather feature package non-null by default. Add Jakarta Bean Validation constraints to the adapter-owned Open-Meteo response records and validate them before mapping into non-null domain values or `WeatherUnavailableException`.
-   - Files: `backend/pom.xml`, `backend/src/main/java/nl/codestar/myvibedapp/weather/package-info.java`, weather adapter DTOs and mappers, Maven build configuration
+   - Files: `../../../backend/pom.xml`, `backend/src/main/java/nl/codestar/myvibedapp/weather/package-info.java`, weather adapter DTOs and mappers, Maven build configuration
 
 4. **Keep functional boundaries clear**
    - Change: Preserve immutable records and application-owned contracts. Keep domain/application transformations side-effect-free where practical. Leave HTTP calls, exception translation, and logging at the adapter boundary instead of forcing streams or `Optional` into code where they do not represent the domain meaning.
-   - Files: `backend/src/main/java/nl/codestar/myvibedapp/weather/domain/`, `backend/src/main/java/nl/codestar/myvibedapp/weather/application/`, `backend/src/main/java/nl/codestar/myvibedapp/weather/adapters/`
+   - Files: `../../../backend/src/main/java/nl/codestar/myvibedapp/weather/domain`, `backend/src/main/java/nl/codestar/myvibedapp/weather/application/`, `backend/src/main/java/nl/codestar/myvibedapp/weather/adapters/`
 
 5. **Replace framework HTTP doubles with a user-defined stub**
    - Change: Replace `MockRestServiceServer` in the Open-Meteo adapter test with a small test-only controllable local HTTP server based on the JDK HTTP server. The stub should support configuring a response or failure and recording the received request for assertions. Keep it generic enough for future outbound-provider adapter tests without becoming a production abstraction.
-   - Files: `backend/src/test/java/nl/codestar/myvibedapp/support/http/`, `backend/src/test/java/nl/codestar/myvibedapp/weather/adapters/out/openmeteo/`
+   - Files: `backend/src/test/java/nl/codestar/myvibedapp/support/http/`, `../../../backend/src/test/java/nl/codestar/myvibedapp/weather/adapters/out/openmeteo`
 
 6. **Rewrite behavior-focused regression tests**
    - Change: Test the rewritten application through MockMvc for the HTTP contract, use a user-defined controllable weather provider fake where useful, and verify the rewritten Open-Meteo adapter against the user-defined HTTP stub. Cover valid mapping, incomplete payloads, malformed timestamps, invalid provider values, unavailable responses, and request coordinates.
-   - Files: `backend/src/test/java/nl/codestar/myvibedapp/weather/`
+   - Files: `../../../backend/src/test/java/nl/codestar/myvibedapp/weather`
 
 7. **Remove starter and dummy code**
    - Change: Delete `HelloController`, its test, and the generic `contextLoads` test. The rewritten backend should retain only production code and tests that support actual product behavior or reusable test infrastructure.
@@ -48,7 +48,7 @@ Replace the existing framework HTTP test double with a small user-defined contro
 
 8. **Verify the rewrite and document any build constraints**
    - Change: Run the complete backend verification, confirm no Mockito or other mocking framework is introduced, verify the endpoint contract remains unchanged, and configure the forked Java 25 compiler with the Error Prone module exports required by NullAway.
-   - Files: `docs/ARCHITECTURE.md`, `backend/pom.xml`, `backend/.mvn/jvm.config`
+   - Files: `../../ARCHITECTURE.md`, `backend/pom.xml`, `backend/.mvn/jvm.config`
 
 ## Test strategy
 

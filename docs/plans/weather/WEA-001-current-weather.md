@@ -1,6 +1,6 @@
 # Implementation plan: WEA-001 — Show current weather
 
-Related story: [WEA-001 — Show current weather](../features/weather/WEA-001-current-weather.md)
+Related story: [WEA-001 — Show current weather](../../features/weather/WEA-001-current-weather.md)
 Status: Approved
 
 ## Approach
@@ -39,7 +39,7 @@ The Angular root will remain a small router shell and lazy-load an initial dashb
 
 7. **Record the provider decision**
    - Change: Update the architecture documentation to record Open-Meteo as the first weather provider, the adapter boundary that contains provider-specific behavior, the absence of caching or refresh in WEA-001, and any attribution requirement confirmed from the provider terms during implementation.
-   - Area: `docs/ARCHITECTURE.md`.
+   - Area: `../../ARCHITECTURE.md`.
 
 ## Test strategy
 
@@ -56,7 +56,7 @@ The Angular root will remain a small router shell and lazy-load an initial dashb
 ## Technical decisions
 
 - Use Open-Meteo because its forecast API provides all WEA-001 fields in one request and does not require a client-side credential. The backend remains the only caller so provider details stay replaceable and later integrations have a consistent application API.
-- Organize the slice into domain, application, and interface layers as required by `backend/AGENTS.md`, without fixing the exact package or file breakdown before implementation. Keep the HTTP and provider adapters separate; expose only the contracts that genuinely cross layer boundaries.
+- Organize the slice into domain, application, and interface layers as required by `../../../backend/AGENTS.md`, without fixing the exact package or file breakdown before implementation. Keep the HTTP and provider adapters separate; expose only the contracts that genuinely cross layer boundaries.
 - Use immutable records for the simple domain, API, and provider DTO values and constructor injection for Spring collaborators. Use Lombok constructor annotations where they remove repetitive dependency-injection boilerplate; do not use Lombok for mutable state or incidental convenience methods.
 - Keep the frontend-to-backend contract provider-neutral; raw WMO codes, provider field names, and wind degrees do not cross the application API boundary.
 - Pass latitude and longitude on each frontend request rather than hard-coding Amsterdam in the backend. This deliberately prepares the same endpoint for WEA-002 while keeping Amsterdam's fixed coordinates owned by the frontend in this story.

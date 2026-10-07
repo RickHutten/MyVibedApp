@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Status | Draft |
-| Priority | To be decided |
+| Priority | Medium |
 
 ## Description
 
@@ -30,8 +30,8 @@ As a user, I want to see tomorrow’s outbound commute in advance so that I know
 
 ## Dependencies
 
-- **Blocked by:** [SCH-006](./SCH-006-show-todays-outbound-commute.md)
-- **Related:** None
+- **Blocked by:** [SCH-004](./SCH-004-resolve-upcoming-work-locations.md), [SCH-005](./SCH-005-configure-commute-preferences.md)
+- **Related:** [SCH-006](./SCH-006-show-todays-outbound-commute.md)
 
 ## Notes
 

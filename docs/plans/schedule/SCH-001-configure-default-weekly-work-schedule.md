@@ -1,6 +1,6 @@
 # Implementation plan: SCH-001 — Configure the default weekly work schedule
 
-Related story: [SCH-001 — Configure the default weekly work schedule](../features/schedule/SCH-001-configure-default-weekly-work-pattern.md)
+Related story: [SCH-001 — Configure the default weekly work schedule](../../features/schedule/SCH-001-configure-default-weekly-work-pattern.md)
 Status: Implemented
 
 ## Approach
@@ -15,31 +15,31 @@ Use a versioned PostgreSQL migration for the schedule and office data. Store sof
 
 1. **Add PostgreSQL, Flyway, and jOOQ infrastructure**
    - Change: Add the PostgreSQL runtime/test dependencies, Flyway migration support, jOOQ code generation, and JSpecify with NullAway build-time nullness checking. Configure the database connection and generation settings through external or build configuration, and add the initial versioned migration for saved offices, weekly schedule settings, and seven day assignments. Generate jOOQ sources from a PostgreSQL schema created from the Flyway migrations; generated sources are reproducible build output and are never edited manually.
-   - Files: `backend/pom.xml`, `backend/src/main/resources/application.properties`, `backend/src/main/resources/db/migration/`, generated jOOQ sources
+   - Files: `../../../backend/pom.xml`, `backend/src/main/resources/application.properties`, `backend/src/main/resources/db/migration/`, generated jOOQ sources
 
 2. **Model the work-schedule domain**
    - Change: Add immutable domain types for weekly hours, day-of-week work status, saved office references, and the complete work schedule. Enforce that office days reference an office and that working hours are valid. Represent soft deletion without exposing persistence entities. Mark the feature package non-null by default with JSpecify, use explicit nullable annotations where needed, return `Optional` for genuinely absent query results, and use streams for collection transformations rather than mutable loops.
-   - Files: `backend/src/main/java/nl/codestar/myvibedapp/schedule/domain/`, `backend/src/main/java/nl/codestar/myvibedapp/schedule/application/`
+   - Files: `../../../backend/src/main/java/nl/codestar/myvibedapp/schedule/domain`, `backend/src/main/java/nl/codestar/myvibedapp/schedule/application/`
 
 3. **Implement jOOQ persistence behind repositories**
    - Change: Add jOOQ-based repositories and explicit mappers for the single-user schedule and offices; do not expose generated records beyond the persistence adapter. Initialize a missing schedule with all seven days non-working and the default `09:00–17:00` hours. Preserve references to soft-deleted offices and exclude them from selectable-office queries.
-   - Files: `backend/src/main/java/nl/codestar/myvibedapp/schedule/adapters/out/persistence/`, generated jOOQ sources, `backend/src/main/java/nl/codestar/myvibedapp/schedule/application/`
+   - Files: `../../../backend/src/main/java/nl/codestar/myvibedapp/schedule/adapters/out/persistence`, generated jOOQ sources, `backend/src/main/java/nl/codestar/myvibedapp/schedule/application/`
 
 4. **Expose schedule and office APIs**
    - Change: Add validated `/api/work-schedule` endpoints to read and update the weekly schedule, plus endpoints to list, add, edit, and soft-delete offices. Return application-owned request/response records and clear validation errors; do not expose persistence entities.
-   - Files: `backend/src/main/java/nl/codestar/myvibedapp/schedule/adapters/in/web/`
+   - Files: `../../../backend/src/main/java/nl/codestar/myvibedapp/schedule/adapters/in/web`
 
 5. **Add Photon address search**
    - Change: Add a geocoding port and Photon adapter with configured base URL, timeout, result limit, and a descriptive user agent. Expose a backend `/api/offices/search` endpoint that returns normalized selectable suggestions. Do not save an office until the user selects a suggestion. Handle provider failure as an unavailable search response without leaking provider details.
-   - Files: `backend/src/main/java/nl/codestar/myvibedapp/schedule/application/`, `backend/src/main/java/nl/codestar/myvibedapp/schedule/adapters/out/photon/`, `backend/src/main/java/nl/codestar/myvibedapp/schedule/adapters/in/web/`, `backend/src/main/resources/application.properties`
+   - Files: `../../../backend/src/main/java/nl/codestar/myvibedapp/schedule/application`, `backend/src/main/java/nl/codestar/myvibedapp/schedule/adapters/out/photon/`, `backend/src/main/java/nl/codestar/myvibedapp/schedule/adapters/in/web/`, `backend/src/main/resources/application.properties`
 
 6. **Add the Angular work-schedule settings experience**
    - Change: Add a lazy-loaded settings route and focused components/services using Angular signals and Signal Forms. Load the backend schedule as the source of truth, edit all seven days and the shared hours, manage offices, search Photon suggestions through the backend, require a selected saved office for office days, and show loading, empty, validation, save, and provider-unavailable states.
-   - Files: `frontend/src/app/work-schedule/`, `frontend/src/app/app.routes.ts`
+   - Files: `../../../frontend/src/app/work-schedule`, `frontend/src/app/app.routes.ts`
 
 7. **Document lasting boundaries and attribution**
    - Change: Record the persistence/migration and provider-adapter decisions in the architecture documentation, including that office search is backend-mediated and Photon/OpenStreetMap attribution and provider-switching requirements must be respected.
-   - Files: `docs/ARCHITECTURE.md`, `docs/features/schedule/SCH-001-configure-default-weekly-work-pattern.md`
+   - Files: `../../ARCHITECTURE.md`, `docs/features/schedule/SCH-001-configure-default-weekly-work-pattern.md`
 
 8. **Create reusable integration-test scenarios**
    - Change: Add test-only fixture definitions, one composable scenario builder, a scenario persister, and a database cleaner. Fixtures prepare valid sub-entity data; the persister owns ordering, stable fixture-key resolution, relationships, and writes through test-only jOOQ support. Provide named presets and flat overrides such as `standard()`, `withOffice(...)`, `withDay(...)`, and `withHours(...)`; do not create recursively nested builders. Clear application-owned tables before each test. Keep assertions at public application boundaries; use direct persistence setup only as test arrangement, not as the behavior under test.

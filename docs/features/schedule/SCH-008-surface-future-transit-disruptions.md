@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Status | Draft |
-| Priority | To be decided |
+| Priority | Medium |
 
 ## Description
 
@@ -29,7 +29,7 @@ As a user, I want important disruptions to be clearly visible before my commute 
 
 ## Dependencies
 
-- **Blocked by:** [SCH-007](./SCH-007-show-next-working-days-commute.md)
+- **Blocked by:** [SCH-006](./SCH-006-show-todays-outbound-commute.md), [SCH-007](./SCH-007-show-next-working-days-commute.md)
 - **Related:** None
 
 ## Notes

@@ -1,6 +1,6 @@
 # Implementation plan: CLK-001 — Show the current time and date
 
-Related story: [CLK-001 — Show the current time and date](../features/clock/CLK-001-show-current-time-and-date.md)
+Related story: [CLK-001 — Show the current time and date](../../features/clock/CLK-001-show-current-time-and-date.md)
 Status: Implemented
 
 ## Approach
@@ -19,19 +19,19 @@ The dashboard layout will be adjusted from a single centered weather card to a t
 
 2. **Move weather coordinates to the shared location**
    - Change: Inject `DashboardLocationService` into the existing weather service and use its latitude and longitude for `/api/weather/current`. Remove the weather service’s private Amsterdam constant without changing the weather request contract or behavior.
-   - Areas: `frontend/src/app/weather/weather.service.ts` and existing weather component coverage.
+   - Areas: `../../../frontend/src/app/weather/weather.service.ts` and existing weather component coverage.
 
 3. **Build the timezone-aware clock**
    - Change: Add a focused clock component that reads the shared location timezone, derives the displayed time and date from one current instant, and formats them with `Intl.DateTimeFormat` using explicit `Europe/Amsterdam`-compatible timezone handling, 24-hour time, and English weekday/day/month output. Keep the display current with a lifecycle-managed timer and update both values when the location-local date crosses midnight.
-   - Areas: a new clock component, template, styles, and component tests under `frontend/src/app/clock/`.
+   - Areas: a new clock component, template, styles, and component tests under `../../../frontend/src/app/clock`.
 
 4. **Compose the dashboard for clock and weather**
    - Change: Render the clock alongside the existing weather card and adapt the dashboard grid for an always-on tablet display with a responsive single-column fallback. Use semantic markup, preserve readable hierarchy, and do not add controls or interaction.
-   - Areas: `frontend/src/app/dashboard/dashboard.ts` and clock/weather presentation styles as needed.
+   - Areas: `../../../frontend/src/app/dashboard/dashboard.ts` and clock/weather presentation styles as needed.
 
 5. **Record the shared location boundary**
    - Change: Update the architecture documentation to state that frontend location-dependent features consume one application-owned dashboard location source, initially fixed to Amsterdam, while provider-specific weather behavior remains isolated behind the backend API.
-   - Area: `docs/ARCHITECTURE.md`.
+   - Area: `../../ARCHITECTURE.md`.
 
 ## Test strategy
 
@@ -53,4 +53,4 @@ The dashboard layout will be adjusted from a single centered weather card to a t
 - Derive the displayed time and date from the same instant to prevent inconsistent values around midnight.
 - Keep timer ownership inside the clock component and clean it up with Angular lifecycle support. The implementation may align updates to minute boundaries, but correctness must not depend on the component being created exactly at the start of a minute.
 - Keep the location source in the frontend for now because WEA-001 already owns request coordinates there and CLK-001 needs no backend data. Moving user-configurable location to persistence remains outside this story.
-- Treat the shared location boundary as a lasting system decision and record it in `docs/ARCHITECTURE.md` during implementation.
+- Treat the shared location boundary as a lasting system decision and record it in `../../ARCHITECTURE.md` during implementation.
