@@ -37,6 +37,12 @@ describe('WorkSchedule', () => {
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Monday');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Sunday');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain(
+      'Tell the dashboard where you usually work.',
+    );
+    expect(fixture.nativeElement.querySelector('h1')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a.back-link')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.page-header')).toBeNull();
     const mondayStatus = fixture.nativeElement.querySelector('#MONDAY-status') as HTMLSelectElement;
     expect(mondayStatus.value).toBe('NON_WORKING');
   });

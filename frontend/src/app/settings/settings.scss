@@ -1,0 +1,104 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  color: #172033;
+}
+
+.settings-shell {
+  --settings-column-gap: clamp(1rem, 4vw, 3rem);
+
+  width: min(100% - 2rem, 78rem);
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.shell-header {
+  display: grid;
+  grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
+  gap: var(--settings-column-gap);
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.back-link {
+  flex: 0 0 auto;
+  color: #43546d;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.back-link:hover,
+.back-link:focus-visible {
+  color: #167c80;
+  text-decoration: underline;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: #167c80;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.05em;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
+  gap: var(--settings-column-gap);
+  align-items: start;
+}
+
+.settings-nav {
+  display: grid;
+  gap: 0.45rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.settings-nav a {
+  display: block;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.6rem;
+  color: #43546d;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.settings-nav a:hover,
+.settings-nav a:focus-visible {
+  background: #e6f1f1;
+  color: #167c80;
+}
+
+.settings-nav a.selected {
+  background: #167c80;
+  color: white;
+}
+
+.settings-content {
+  min-width: 0;
+}
+
+@media (max-width: 44rem) {
+  .shell-header {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-nav {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

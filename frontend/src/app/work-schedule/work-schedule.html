@@ -1,16 +1,4 @@
-<main class="settings" aria-labelledby="page-title">
-  <header class="page-header">
-    <a href="/" class="back-link">← Dashboard</a>
-    <div>
-      <p class="eyebrow">Schedule settings</p>
-      <h1 id="page-title">Your work week</h1>
-      <p class="intro">
-        Tell the dashboard where you usually work. This weekly pattern is the default for your
-        schedule.
-      </p>
-    </div>
-  </header>
-
+<main class="settings" aria-label="Schedule settings">
   @if (loading()) {
     <output class="status">Loading your work schedule…</output>
   } @else if (error() && days().length === 0) {

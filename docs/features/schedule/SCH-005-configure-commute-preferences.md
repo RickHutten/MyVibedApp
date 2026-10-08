@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Draft |
+| Status | Approved |
 | Priority | High |
 
 ## Description
@@ -11,9 +11,14 @@ As a user, I want to configure how much time I need before leaving for work and 
 
 The commute origin is the shared dashboard location used by the weather and clock. The user does not configure a separate home location for commute planning.
 
+Commute preferences are a separate set of settings with their own application and persistence boundary. They share only the settings page navigation with schedule settings. The home page has one Settings button that opens a settings page. That page has a left-hand vertical navigation with one button for schedule settings and one button for commute settings; the selected button controls which settings view is shown in the main content area.
+
 ## Scope
 
 - **In scope:**
+  - One Settings button on the home page that opens the settings page
+  - A left-hand settings navigation with Schedule settings and Commute settings buttons
+  - Showing the selected settings type in the main settings view
   - Reusing the shared dashboard location coordinates as the commute origin
   - A configurable wake-up lead time in whole minutes
   - A default wake-up lead time of 45 minutes before the recommended leave-home time
@@ -37,6 +42,9 @@ The commute origin is the shared dashboard location used by the weather and cloc
 - [ ] The user can configure the transit-access buffer in whole minutes.
 - [ ] The default transit-access buffer is 5 minutes.
 - [ ] The user can configure the office-arrival lead time in whole minutes.
+- [ ] The home page has one Settings button that opens the settings page.
+- [ ] The settings page shows Schedule settings and Commute settings as vertically stacked buttons on the left.
+- [ ] Selecting a settings-navigation button changes the settings shown in the main view without displaying both settings forms at once.
 - [ ] The default office-arrival lead time is 5 minutes.
 - [ ] All three preferences accept zero or any larger whole-minute value.
 - [ ] The commute origin is the same shared dashboard location used by the weather and clock; the user is not asked to configure a separate home location.

@@ -1,0 +1,34 @@
+<main class="settings-shell" aria-labelledby="settings-title">
+  <header class="shell-header">
+    <a routerLink="/" class="back-link">← Dashboard</a>
+    <div>
+      <p class="eyebrow">Settings</p>
+      <h1 id="settings-title">Personalise your dashboard</h1>
+    </div>
+  </header>
+
+  <div class="settings-layout">
+    <nav class="settings-nav" aria-label="Settings sections">
+      <a
+        routerLink="/settings/schedule"
+        routerLinkActive="selected"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+      >
+        Schedule settings
+      </a>
+      <a
+        routerLink="/settings/commute"
+        routerLinkActive="selected"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+      >
+        Commute settings
+      </a>
+    </nav>
+
+    <section class="settings-content" aria-live="polite">
+      <router-outlet />
+    </section>
+  </div>
+</main>

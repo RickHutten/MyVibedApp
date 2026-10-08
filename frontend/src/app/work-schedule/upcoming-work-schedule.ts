@@ -5,7 +5,7 @@ import {
   UpcomingScheduleStatus,
   UpcomingWorkDay,
   UpcomingWorkSchedule as UpcomingWorkScheduleData,
-  UpcomingWorkScheduleService
+  UpcomingWorkScheduleService,
 } from './upcoming-work-schedule.service';
 
 @Component({

@@ -109,6 +109,19 @@ Run all frontend checks together with `npm run check`.
 - Build reusable, composable scenario builders for stateful integration-test setup. They should provide sensible defaults and focused overrides so tests describe the state they need without duplicating fixture wiring. Scenario builders persist fixture state directly through test persistence support, and each test must start from cleaned state.
 - For behavior changes, write the appropriate functional test before implementation and confirm that it fails for the expected reason.
 
+### TDD sequence
+
+For each story behavior, follow this sequence:
+
+1. Write only functional tests for behavior explicitly required by the story and exercised through a public boundary.
+2. Run those tests and confirm they fail for the expected missing-behavior reason.
+3. Implement only the code directly required to make those functional tests pass. Do not add speculative abstractions, future-facing integrations, unused APIs, or tests for implementation details.
+4. Run the functional tests green.
+5. Perform a separate refactor pass to improve structure, readability, reuse, and justified extensibility without adding new product behavior.
+6. Only after implementation, add focused unit tests where the implemented logic is complex or has meaningful input permutations not covered by the functional tests.
+
+Do not add a class, method, port, adapter, abstraction, or unit test unless it directly supports implemented story behavior and has a current production caller or public boundary. Keep all tests green during refactoring.
+
 ## Completion criteria
 
 Before calling work complete:

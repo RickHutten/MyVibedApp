@@ -272,7 +272,7 @@
 									<value>lower</value>
 								</property>
 							</properties>
-							<includes>saved_offices|work_schedule|work_schedule_days|recurring_schedule_rules|one_off_schedule_overrides</includes>
+							<includes>saved_offices|work_schedule|work_schedule_days|recurring_schedule_rules|one_off_schedule_overrides|commute_preferences</includes>
 						</database>
 						<generate>
 							<daos>false</daos>

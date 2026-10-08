@@ -9,7 +9,7 @@ import { UpcomingWorkSchedule } from '../work-schedule/upcoming-work-schedule';
   imports: [Clock, WeatherCard, UpcomingWorkSchedule],
   template: `
     <main>
-      <a class="settings-link" href="/settings/schedule">Schedule settings</a>
+      <a class="settings-link" href="/settings">Settings</a>
       <app-clock />
       <app-weather-card />
       <app-upcoming-work-schedule />

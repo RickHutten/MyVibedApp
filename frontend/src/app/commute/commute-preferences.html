@@ -1,0 +1,79 @@
+<main class="settings" aria-label="Commute settings">
+  @if (loading()) {
+    <output class="status">Loading your commute preferences…</output>
+  } @else if (error() && !hasLoaded()) {
+    <section class="message error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" (click)="load()">Try again</button>
+    </section>
+  } @else {
+    <form class="card preferences-card" (submit)="$event.preventDefault(); save()">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Timing preferences</p>
+          <h2>Morning commute</h2>
+        </div>
+        <button class="primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Saving…' : 'Save preferences' }}
+        </button>
+      </div>
+
+      <label>
+        Wake-up lead
+        <span class="hint">Time between waking up and leaving home.</span>
+        <span class="input-with-unit">
+          <input
+            type="number"
+            min="0"
+            step="1"
+            [value]="wakeUpLeadMinutes()"
+            (input)="setWakeUpLeadMinutes($event)"
+            name="wakeUpLeadMinutes"
+            required
+          />
+          <span>minutes</span>
+        </span>
+      </label>
+
+      <label>
+        First transit access buffer
+        <span class="hint">Extra time before the first transit departure.</span>
+        <span class="input-with-unit">
+          <input
+            type="number"
+            min="0"
+            step="1"
+            [value]="transitAccessBufferMinutes()"
+            (input)="setTransitAccessBufferMinutes($event)"
+            name="transitAccessBufferMinutes"
+            required
+          />
+          <span>minutes</span>
+        </span>
+      </label>
+
+      <label>
+        Office-arrival lead
+        <span class="hint">How early you want to arrive before work starts.</span>
+        <span class="input-with-unit">
+          <input
+            type="number"
+            min="0"
+            step="1"
+            [value]="officeArrivalLeadMinutes()"
+            (input)="setOfficeArrivalLeadMinutes($event)"
+            name="officeArrivalLeadMinutes"
+            required
+          />
+          <span>minutes</span>
+        </span>
+      </label>
+
+      @if (error()) {
+        <p class="message error" role="alert">{{ error() }}</p>
+      } @else if (saved()) {
+        <p class="message success" role="status">Saved</p>
+      }
+    </form>
+  }
+</main>
