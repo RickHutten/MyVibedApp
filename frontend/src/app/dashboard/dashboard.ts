@@ -2,33 +2,41 @@ import { Component } from '@angular/core';
 
 import { Clock } from '../clock/clock';
 import { WeatherCard } from '../weather/weather-card';
+import { UpcomingWorkSchedule } from '../work-schedule/upcoming-work-schedule';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [Clock, WeatherCard],
+  imports: [Clock, WeatherCard, UpcomingWorkSchedule],
   template: `
     <main>
       <a class="settings-link" href="/settings/schedule">Schedule settings</a>
       <app-clock />
       <app-weather-card />
+      <app-upcoming-work-schedule />
     </main>
   `,
   styles: `
     :host {
       display: block;
-      min-height: 100dvh;
+      height: 100dvh;
+      overflow: hidden;
     }
 
     main {
       position: relative;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(20rem, 34rem);
-      gap: clamp(2rem, 6vw, 6rem);
+      grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem);
+      grid-template-rows: auto auto;
+      column-gap: clamp(1rem, 3vw, 2.5rem);
+      row-gap: clamp(0.75rem, 2vw, 1.25rem);
       align-items: center;
+      align-content: center;
       width: min(100%, 75rem);
-      min-height: 100dvh;
+      height: 100%;
+      min-height: 0;
       margin: 0 auto;
-      padding: clamp(1rem, 4vw, 3rem);
+      padding: clamp(0.75rem, 3vw, 2rem);
+      overflow: hidden;
     }
 
     .settings-link {
@@ -46,10 +54,77 @@ import { WeatherCard } from '../weather/weather-card';
       text-decoration: underline;
     }
 
+    app-upcoming-work-schedule {
+      grid-column: 2;
+      grid-row: 1 / -1;
+      align-self: center;
+    }
+
+    app-clock {
+      grid-column: 1;
+      grid-row: 1;
+      align-self: end;
+      justify-self: center;
+      text-align: center;
+    }
+
+    app-weather-card {
+      grid-column: 1;
+      grid-row: 2;
+      align-self: start;
+      justify-self: center;
+    }
+
     @media (max-width: 54rem) {
       main {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: clamp(0.5rem, 2vw, 1rem);
         align-content: center;
+      }
+
+      app-clock {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        align-self: center;
+        justify-self: center;
+      }
+
+      app-weather-card {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: center;
+        justify-self: center;
+      }
+
+      app-upcoming-work-schedule {
+        grid-column: 2;
+        grid-row: 2;
+        align-self: center;
+      }
+    }
+
+    @media (max-width: 36rem) {
+      main {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+      }
+
+      app-clock {
+        grid-column: 1;
+        grid-row: 1;
+        justify-self: center;
+      }
+
+      app-weather-card {
+        grid-column: 1;
+        grid-row: 2;
+        justify-self: center;
+      }
+
+      app-upcoming-work-schedule {
+        grid-column: 1;
+        grid-row: 3;
       }
     }
   `,

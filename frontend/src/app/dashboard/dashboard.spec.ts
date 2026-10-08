@@ -37,6 +37,15 @@ describe('Dashboard', () => {
         windSpeedKmh: 25.6,
         windDirection: 'W',
       });
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/work-schedule/upcoming')
+      .flush({
+        today: {
+          date: '2026-10-05',
+          status: 'WORK_FROM_HOME',
+        },
+        nextWorkingDay: null,
+      });
     fixture.detectChanges();
 
     const content = fixture.nativeElement.textContent as string;

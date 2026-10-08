@@ -1,0 +1,29 @@
+<section class="schedule-card" aria-label="Upcoming work schedule">
+  <header>
+    <p class="eyebrow">Upcoming schedule</p>
+  </header>
+
+  @if (status() === 'loading') {
+    <p>Loading schedule…</p>
+  } @else if (status() === 'unavailable') {
+    <p>Schedule is unavailable</p>
+  } @else if (schedule(); as current) {
+    <div class="day-grid">
+      <article>
+        <p class="day-label">Today</p>
+        <h2>{{ formatDate(current.today.date) }}</h2>
+        <p class="location-status">{{ locationLabel(current.today) }}</p>
+      </article>
+
+      @if (current.nextWorkingDay; as next) {
+        <article>
+          <p class="day-label">Next working day</p>
+          <h2>{{ formatDate(next.date) }}</h2>
+          <p class="location-status">{{ locationLabel(next) }}</p>
+        </article>
+      } @else {
+        <p class="empty-state">No upcoming work scheduled</p>
+      }
+    </div>
+  }
+</section>

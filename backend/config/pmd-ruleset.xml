@@ -23,6 +23,7 @@
         <exclude name="OnlyOneReturn" />
         <exclude name="ShortVariable" />
         <exclude name="TooManyStaticImports" />
+        <exclude name="UseExplicitTypes" />
     </rule>
     <rule ref="category/java/design.xml">
         <exclude name="LawOfDemeter" />

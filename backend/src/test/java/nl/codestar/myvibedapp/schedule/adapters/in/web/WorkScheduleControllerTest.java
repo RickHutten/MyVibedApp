@@ -5,63 +5,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
+import nl.codestar.myvibedapp.support.postgresql.PostgresIntegrationTest;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.web.context.WebApplicationContext;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@SpringBootTest
-@ActiveProfiles("local")
-@Testcontainers
-class WorkScheduleControllerTest {
+class WorkScheduleControllerTest extends PostgresIntegrationTest {
 
     private static final String WORK_SCHEDULE_ENDPOINT = "/api/work-schedule";
     private static final String JSON_CONTENT_TYPE = "application/json";
 
-    @Container
-    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:18.6");
-
-    private final MockMvc mockMvc;
-    private final JdbcTemplate jdbcTemplate;
-
-    @DynamicPropertySource
-    static void configurePostgres(final DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
-
-    WorkScheduleControllerTest(
-            @Autowired final WebApplicationContext context,
-            @Autowired final JdbcTemplate jdbcTemplate) {
-        mockMvc = webAppContextSetup(context).build();
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
-    @BeforeEach
-    void resetDatabase() {
-        jdbcTemplate.execute("truncate table one_off_schedule_overrides, recurring_schedule_rules, work_schedule_days, saved_offices");
-        jdbcTemplate.execute("truncate table work_schedule");
-        jdbcTemplate.execute("insert into work_schedule (id, start_time, end_time) values (true, '09:00', '17:00')");
-        jdbcTemplate.execute("insert into work_schedule_days (day_of_week, status, office_id) "
-                + "select day_number, 'NON_WORKING', null from generate_series(1, 7) as day_number");
-    }
 
     @Test
     void returnsDefaultScheduleWithAllDaysNonWorking() throws Exception {
