@@ -1,5 +1,6 @@
 package nl.codestar.myvibedapp.schedule.adapters.out.persistence;
 
+import static nl.codestar.myvibedapp.jooq.Tables.ONE_OFF_SCHEDULE_OVERRIDES;
 import static nl.codestar.myvibedapp.jooq.Tables.RECURRING_SCHEDULE_RULES;
 import static nl.codestar.myvibedapp.jooq.Tables.SAVED_OFFICES;
 import static nl.codestar.myvibedapp.jooq.Tables.WORK_SCHEDULE;
@@ -13,6 +14,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import nl.codestar.myvibedapp.jooq.tables.records.WorkScheduleDaysRecord;
 import nl.codestar.myvibedapp.schedule.application.ScheduleStore;
+import nl.codestar.myvibedapp.schedule.domain.OneOffOverride;
 import nl.codestar.myvibedapp.schedule.domain.RecurringRule;
 import nl.codestar.myvibedapp.schedule.domain.SavedOffice;
 import nl.codestar.myvibedapp.schedule.domain.ScheduleDay;
@@ -145,6 +147,38 @@ class JooqScheduleStore implements ScheduleStore {
     public void deleteRecurringRule(final UUID id) {
         dsl.deleteFrom(RECURRING_SCHEDULE_RULES)
                 .where(RECURRING_SCHEDULE_RULES.ID.eq(id))
+                .execute();
+    }
+
+    @Override
+    public List<OneOffOverride> oneOffOverrides() {
+        return dsl.selectFrom(ONE_OFF_SCHEDULE_OVERRIDES)
+                .orderBy(ONE_OFF_SCHEDULE_OVERRIDES.START_DATE, ONE_OFF_SCHEDULE_OVERRIDES.ID)
+                .fetch(JooqOneOffOverrideMapper::from);
+    }
+
+    @Override
+    public OneOffOverride saveOneOffOverride(final OneOffOverride override) {
+        dsl.insertInto(ONE_OFF_SCHEDULE_OVERRIDES)
+                .set(ONE_OFF_SCHEDULE_OVERRIDES.ID, override.id())
+                .set(ONE_OFF_SCHEDULE_OVERRIDES.START_DATE, override.startDate())
+                .set(ONE_OFF_SCHEDULE_OVERRIDES.END_DATE, override.endDate())
+                .set(ONE_OFF_SCHEDULE_OVERRIDES.STATUS, override.status().name())
+                .set(ONE_OFF_SCHEDULE_OVERRIDES.OFFICE_ID, override.officeId())
+                .onConflict(ONE_OFF_SCHEDULE_OVERRIDES.ID)
+                .doUpdate()
+                .set(ONE_OFF_SCHEDULE_OVERRIDES.START_DATE, override.startDate())
+                .set(ONE_OFF_SCHEDULE_OVERRIDES.END_DATE, override.endDate())
+                .set(ONE_OFF_SCHEDULE_OVERRIDES.STATUS, override.status().name())
+                .set(ONE_OFF_SCHEDULE_OVERRIDES.OFFICE_ID, override.officeId())
+                .execute();
+        return override;
+    }
+
+    @Override
+    public void deleteOneOffOverride(final UUID id) {
+        dsl.deleteFrom(ONE_OFF_SCHEDULE_OVERRIDES)
+                .where(ONE_OFF_SCHEDULE_OVERRIDES.ID.eq(id))
                 .execute();
     }
 }

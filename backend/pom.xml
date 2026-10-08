@@ -226,6 +226,13 @@
 						</goals>
 					</execution>
 					<execution>
+						<id>pmd-check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+					<execution>
 						<id>cpd-report</id>
 						<phase>verify</phase>
 						<goals>
@@ -265,7 +272,7 @@
 									<value>lower</value>
 								</property>
 							</properties>
-							<includes>saved_offices|work_schedule|work_schedule_days|recurring_schedule_rules</includes>
+							<includes>saved_offices|work_schedule|work_schedule_days|recurring_schedule_rules|one_off_schedule_overrides</includes>
 						</database>
 						<generate>
 							<daos>false</daos>

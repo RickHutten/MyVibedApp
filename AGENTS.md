@@ -23,6 +23,14 @@ Add a more specific `AGENTS.md` inside `backend/` or `frontend/` only when that 
 - Prefer small, reviewable changes with tests.
 - Fix root causes rather than suppressing errors.
 
+### Scope discipline for all agents
+
+- Implement only behavior required by the approved story and exercised by a current caller or public boundary.
+- Do not add speculative abstractions, future-facing integrations, unused APIs, or code for a later story.
+- Do not use `@SuppressWarnings("unused")` or equivalent suppressions to hide dead code. Delete the dead code instead.
+- Before adding a class, method, port, or adapter, identify its current production caller and the test that proves its behavior. If neither exists, do not add it.
+- Keep future behavior in the story or implementation plan until the story that consumes it is implemented.
+
 ## Decision-making with the user
 
 - Before making an impactful decision, ask the user which direction to take rather than choosing silently.

@@ -68,6 +68,16 @@ export interface RecurringRule {
 
 export type RecurringRuleInput = Omit<RecurringRule, 'id'>;
 
+export interface OneOffOverride {
+  id: string;
+  startDate: string;
+  endDate: string | null;
+  status: ScheduleStatus;
+  officeId: string | null;
+}
+
+export type OneOffOverrideInput = Omit<OneOffOverride, 'id'>;
+
 @Injectable({ providedIn: 'root' })
 export class WorkScheduleService {
   private readonly http = inject(HttpClient);
@@ -110,5 +120,21 @@ export class WorkScheduleService {
 
   deleteRecurringRule(id: string): Observable<void> {
     return this.http.delete<void>(`/api/work-schedule/recurring-rules/${id}`);
+  }
+
+  getOneOffOverrides(): Observable<OneOffOverride[]> {
+    return this.http.get<OneOffOverride[]>('/api/work-schedule/overrides');
+  }
+
+  addOneOffOverride(override: OneOffOverrideInput): Observable<OneOffOverride> {
+    return this.http.post<OneOffOverride>('/api/work-schedule/overrides', override);
+  }
+
+  editOneOffOverride(id: string, override: OneOffOverrideInput): Observable<OneOffOverride> {
+    return this.http.put<OneOffOverride>(`/api/work-schedule/overrides/${id}`, override);
+  }
+
+  deleteOneOffOverride(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/work-schedule/overrides/${id}`);
   }
 }

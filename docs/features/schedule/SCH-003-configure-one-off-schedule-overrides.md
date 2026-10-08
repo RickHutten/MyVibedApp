@@ -11,9 +11,9 @@ As a user, I want to override my schedule for today or a future date so that hol
 
 ## Scope
 
-- **In scope:**
+**In scope:**
   - Creating, editing, and deleting one-off overrides in schedule settings
-  - One override for a specific calendar date
+  - One override for an inclusive calendar date range; omitting the end date means one day
   - One-off office days at a saved office
   - One-off work-from-home days
   - One-off non-working days, including holidays
@@ -25,21 +25,24 @@ As a user, I want to override my schedule for today or a future date so that hol
 
 ## Acceptance criteria
 
-- [ ] The user can create an override for today or a future date from schedule settings.
-- [ ] The system rejects an override whose date is in the past.
-- [ ] A date can have at most one one-off override.
-- [ ] The system rejects a second override for a date and leaves the existing override unchanged.
+- [ ] The user can create an override starting today or on a future date from schedule settings.
+- [ ] The user can optionally provide an end date to create one range override covering every date inclusively.
+- [ ] Omitting the end date creates a one-day override.
+- [ ] The system rejects an override whose start date is in the past.
+- [ ] The system rejects an end date before the start date.
+- [ ] A calendar date can be covered by at most one one-off override.
+- [ ] The system rejects any range that overlaps an existing override and leaves the existing override unchanged.
 - [ ] The user can set an override to office, work from home, or non-working.
 - [ ] An office override requires selecting an active saved office from [SCH-001](./SCH-001-configure-default-weekly-work-pattern.md).
 - [ ] A soft-deleted office is not available for new override selections.
 - [ ] An existing override continues to use its assigned office after that office is soft-deleted.
-- [ ] The user can edit an existing one-off override for today or a future date, including changing its date to another today or future date.
-- [ ] The system rejects changing an override to a date that already has another override and leaves both existing overrides unchanged.
-- [ ] A one-off override whose date has passed cannot be edited.
+- [ ] The user can edit an existing one-off override whose start date is today or future, including changing its range to another valid non-overlapping range.
+- [ ] The system rejects changing an override to a range that overlaps another override and leaves both existing overrides unchanged.
+- [ ] A one-off override whose start date has passed cannot be edited.
 - [ ] The user can delete an existing one-off override.
-- [ ] A one-off override takes precedence over every applicable recurring rule and the default weekly schedule for its date.
-- [ ] After an override is deleted, the applicable recurring rule or default weekly schedule is used for that date.
-- [ ] A one-off override remains visible in schedule settings after its date has passed and is not marked as expired.
+- [ ] A one-off override takes precedence over every applicable recurring rule and the default weekly schedule for every date in its range.
+- [ ] After an override is deleted, the applicable recurring rule or default weekly schedule is used for every date previously covered by that range.
+- [ ] A one-off override remains visible in schedule settings after its range has passed and is not marked as expired.
 
 ## Dependencies
 

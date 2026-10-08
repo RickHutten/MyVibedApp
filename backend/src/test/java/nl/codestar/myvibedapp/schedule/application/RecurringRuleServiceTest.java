@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import nl.codestar.myvibedapp.schedule.domain.OneOffOverride;
 import nl.codestar.myvibedapp.schedule.domain.RecurrenceLevel;
 import nl.codestar.myvibedapp.schedule.domain.RecurringRule;
 import nl.codestar.myvibedapp.schedule.domain.SavedOffice;
@@ -66,6 +67,21 @@ class RecurringRuleServiceTest {
 
             @Override
             public void deleteRecurringRule(final UUID id) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public List<OneOffOverride> oneOffOverrides() {
+                return List.of();
+            }
+
+            @Override
+            public OneOffOverride saveOneOffOverride(final OneOffOverride override) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void deleteOneOffOverride(final UUID id) {
                 throw new UnsupportedOperationException();
             }
         }

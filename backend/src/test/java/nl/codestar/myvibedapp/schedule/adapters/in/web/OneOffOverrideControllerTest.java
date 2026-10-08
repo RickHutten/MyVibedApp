@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
 
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
+
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,10 +30,14 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @SpringBootTest
 @ActiveProfiles("local")
 @Testcontainers
-class RecurringRuleControllerTest {
+class OneOffOverrideControllerTest {
 
-    private static final String ENDPOINT = "/api/work-schedule/recurring-rules";
+    private static final String ENDPOINT = "/api/work-schedule/overrides";
     private static final String JSON = "application/json";
+    private static final String FIRST_OVERRIDE_START_DATE = "2026-10-08";
+    private static final String FIRST_OVERRIDE_END_DATE = "2026-10-10";
+    private static final String WORK_FROM_HOME_STATUS = "WORK_FROM_HOME";
+    private static final String NON_WORKING_STATUS = "NON_WORKING";
 
     @Container
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:18.6");
@@ -47,7 +52,7 @@ class RecurringRuleControllerTest {
         registry.add("spring.datasource.password", POSTGRES::getPassword);
     }
 
-    RecurringRuleControllerTest(
+    OneOffOverrideControllerTest(
             @Autowired final WebApplicationContext context,
             @Autowired final JdbcTemplate jdbcTemplate) {
         mockMvc = webAppContextSetup(context).build();
@@ -56,7 +61,8 @@ class RecurringRuleControllerTest {
 
     @BeforeEach
     void resetDatabase() {
-        jdbcTemplate.execute("truncate table one_off_schedule_overrides, recurring_schedule_rules, work_schedule_days, saved_offices");
+        jdbcTemplate.execute("truncate table one_off_schedule_overrides, recurring_schedule_rules, "
+                + "work_schedule_days, saved_offices");
         jdbcTemplate.execute("truncate table work_schedule");
         jdbcTemplate.execute("insert into work_schedule (id, start_time, end_time) values (true, '09:00', '17:00')");
         jdbcTemplate.execute("insert into work_schedule_days (day_of_week, status, office_id) "
@@ -64,14 +70,14 @@ class RecurringRuleControllerTest {
     }
 
     @Test
-    void createsUpdatesListsAndDeletesRule() throws Exception {
+    void createsListsUpdatesAndDeletesOverride() throws Exception {
         final MvcResult created = mockMvc.perform(post(ENDPOINT)
                         .contentType(JSON)
-                        .content(dailyRule("WORK_FROM_HOME", "2026-01-01", "2026-01-31", 2)))
+                        .content(override(FIRST_OVERRIDE_START_DATE, FIRST_OVERRIDE_END_DATE, WORK_FROM_HOME_STATUS)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.level").value("DAYS"))
-                .andExpect(jsonPath("$.interval").value(2))
-                .andExpect(jsonPath("$.endDate").value("2026-01-31"))
+                .andExpect(jsonPath("$.startDate").value(FIRST_OVERRIDE_START_DATE))
+                .andExpect(jsonPath("$.endDate").value(FIRST_OVERRIDE_END_DATE))
+                .andExpect(jsonPath("$.status").value(WORK_FROM_HOME_STATUS))
                 .andReturn();
         final UUID id = UUID.fromString(JsonPath.read(created.getResponse().getContentAsString(), "$.id"));
 
@@ -81,21 +87,11 @@ class RecurringRuleControllerTest {
 
         mockMvc.perform(put(ENDPOINT + "/" + id)
                         .contentType(JSON)
-                        .content("""
-                                {
-                                  "level":"MONTHS",
-                                  "interval":1,
-                                  "weekdays":[],
-                                  "monthlyPattern":{"type":"CALENDAR_DAY","calendarDay":31},
-                                  "startDate":"2026-01-01",
-                                  "endDate":null,
-                                  "status":"NON_WORKING",
-                                  "officeId":null
-                                }
-                                """))
+                        .content(override("2026-10-11", null, NON_WORKING_STATUS)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.level").value("MONTHS"))
-                .andExpect(jsonPath("$.monthlyPattern.calendarDay").value(31));
+                .andExpect(jsonPath("$.startDate").value("2026-10-11"))
+                .andExpect(jsonPath("$.endDate").doesNotExist())
+                .andExpect(jsonPath("$.status").value(NON_WORKING_STATUS));
 
         mockMvc.perform(delete(ENDPOINT + "/" + id))
                 .andExpect(status().isNoContent());
@@ -105,37 +101,42 @@ class RecurringRuleControllerTest {
     }
 
     @Test
-    void rejectsSameLevelOccurrenceConflictAndIdentifiesExistingRule() throws Exception {
-        final MvcResult created = mockMvc.perform(post(ENDPOINT)
+    void rejectsOverlappingRangeAndLeavesExistingOverrideUnchanged() throws Exception {
+        mockMvc.perform(post(ENDPOINT)
                         .contentType(JSON)
-                        .content(dailyRule("WORK_FROM_HOME", "2026-01-01", null, 1)))
-                .andExpect(status().isCreated())
-                .andReturn();
-        final UUID existingId = UUID.fromString(JsonPath.read(created.getResponse().getContentAsString(), "$.id"));
+                        .content(override(FIRST_OVERRIDE_START_DATE, FIRST_OVERRIDE_END_DATE, WORK_FROM_HOME_STATUS)))
+                .andExpect(status().isCreated());
 
         mockMvc.perform(post(ENDPOINT)
                         .contentType(JSON)
-                        .content(dailyRule("NON_WORKING", "2026-01-01", null, 2)))
+                        .content(override("2026-10-10", "2026-10-12", NON_WORKING_STATUS)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.conflictRuleId").value(existingId.toString()));
+                .andExpect(jsonPath("$.conflictOverrideId").isNotEmpty());
+
+        mockMvc.perform(get(ENDPOINT))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].status").value(WORK_FROM_HOME_STATUS));
     }
 
-    private static String dailyRule(
-            final String status,
-            final String startDate,
-            @Nullable final String endDate,
-            final int interval) {
+    @Test
+    void rejectsEndDateBeforeStartDate() throws Exception {
+        mockMvc.perform(post(ENDPOINT)
+                        .contentType(JSON)
+                        .content(override("2026-10-10", "2026-10-09", NON_WORKING_STATUS)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Override end date cannot be before its start date"));
+    }
+
+    private static String override(final String startDate, final @Nullable String endDate, final String status) {
+        final String endDateJson = endDate == null ? "null" : "\"%s\"".formatted(endDate);
         return """
                 {
-                  "level":"DAYS",
-                  "interval":%d,
-                  "weekdays":[],
-                  "monthlyPattern":null,
                   "startDate":"%s",
                   "endDate":%s,
                   "status":"%s",
                   "officeId":null
                 }
-                """.formatted(interval, startDate, endDate == null ? "null" : "\"%s\"".formatted(endDate), status);
+                """.formatted(startDate, endDateJson, status);
     }
 }

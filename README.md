@@ -124,11 +124,11 @@ Spotless checks imports and fully qualified type names. Error Prone runs during
 compilation. PMD runs broad best-practice, style, design, documentation,
 error-prone, multithreading, performance, and security checks. PMD also runs
 CPD to detect duplicated code. Reports are written to
-`backend/target/reports/pmd.html` and `backend/target/reports/cpd.html` without
-failing the default build, because framework entry points and public APIs require
-review before removal or suppression.
+`backend/target/reports/pmd.html` and `backend/target/reports/cpd.html`. PMD
+violations fail the default `verify` lifecycle; framework entry points and public
+APIs still require review before removal or suppression.
 
-For an enforced PMD check that fails when the report contains any violation, run:
+To run the PMD report and enforced check directly, run:
 
 ```sh
 ./mvnw -q pmd:pmd pmd:check -Dpmd.failOnViolation=true -DskipTests

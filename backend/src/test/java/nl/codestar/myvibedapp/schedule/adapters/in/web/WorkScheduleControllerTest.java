@@ -56,7 +56,7 @@ class WorkScheduleControllerTest {
 
     @BeforeEach
     void resetDatabase() {
-        jdbcTemplate.execute("truncate table recurring_schedule_rules, work_schedule_days, saved_offices");
+        jdbcTemplate.execute("truncate table one_off_schedule_overrides, recurring_schedule_rules, work_schedule_days, saved_offices");
         jdbcTemplate.execute("truncate table work_schedule");
         jdbcTemplate.execute("insert into work_schedule (id, start_time, end_time) values (true, '09:00', '17:00')");
         jdbcTemplate.execute("insert into work_schedule_days (day_of_week, status, office_id) "

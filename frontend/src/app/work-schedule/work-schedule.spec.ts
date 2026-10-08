@@ -32,6 +32,7 @@ describe('WorkSchedule', () => {
 
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule').flush(schedule);
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/recurring-rules').flush([]);
+    TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/overrides').flush([]);
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Monday');
@@ -50,6 +51,7 @@ describe('WorkSchedule', () => {
     fixture.detectChanges();
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule').flush(schedule);
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/recurring-rules').flush([]);
+    TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/overrides').flush([]);
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
@@ -70,6 +72,7 @@ describe('WorkSchedule', () => {
     fixture.detectChanges();
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule').flush(schedule);
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/recurring-rules').flush([]);
+    TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/overrides').flush([]);
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
@@ -139,6 +142,7 @@ describe('WorkSchedule', () => {
           officeId: 'office-1',
         },
       ]);
+    TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/overrides').flush([]);
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -158,6 +162,7 @@ describe('WorkSchedule', () => {
     fixture.detectChanges();
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule').flush(schedule);
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/recurring-rules').flush([]);
+    TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/overrides').flush([]);
 
     const component = fixture.componentInstance;
     component.setRuleField('interval', 2);
@@ -223,6 +228,7 @@ describe('WorkSchedule', () => {
     fixture.detectChanges();
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule').flush(schedule);
     TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/recurring-rules').flush([]);
+    TestBed.inject(HttpTestingController).expectOne('/api/work-schedule/overrides').flush([]);
 
     const component = fixture.componentInstance;
     component.setRuleLevel('WEEKS');
@@ -232,5 +238,61 @@ describe('WorkSchedule', () => {
     expect(
       TestBed.inject(HttpTestingController).match('/api/work-schedule/recurring-rules'),
     ).toHaveLength(0);
+  });
+
+  it('loads overrides, disables editing for past dates, and validates office overrides', async () => {
+    await TestBed.configureTestingModule({
+      imports: [WorkSchedule],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(WorkSchedule);
+    fixture.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/work-schedule').flush(schedule);
+    http.expectOne('/api/work-schedule/recurring-rules').flush([]);
+    http.expectOne('/api/work-schedule/overrides').flush([
+      {
+        id: 'override-1',
+        startDate: '2020-01-01',
+        endDate: null,
+        status: 'NON_WORKING',
+        officeId: null,
+      },
+      {
+        id: 'override-2',
+        startDate: '2099-01-01',
+        endDate: '2099-01-03',
+        status: 'WORK_FROM_HOME',
+        officeId: null,
+      },
+    ]);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('2020-01-01 (one day) · Non-working');
+    expect(text).toContain('2099-01-01 – 2099-01-03 · Work from home');
+    expect(text).not.toContain('Expired');
+    expect(
+      (
+        fixture.nativeElement.querySelector(
+          '.overrides-card .rule-list li:first-child button',
+        ) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+
+    component.setOverrideStatus('NON_WORKING');
+    component.setOverrideField('startDate', '2099-01-10');
+    component.setOverrideField('endDate', '2099-01-09');
+    component.saveOneOffOverride();
+    expect(component.overrideError()).toBe('The end date cannot be before the start date.');
+    expect(http.match('/api/work-schedule/overrides')).toHaveLength(0);
+
+    component.setOverrideStatus('OFFICE');
+    component.setOverrideField('endDate', null);
+    component.saveOneOffOverride();
+    expect(component.overrideError()).toBe('Choose a saved office.');
+    expect(http.match('/api/work-schedule/overrides')).toHaveLength(0);
   });
 });

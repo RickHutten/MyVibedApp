@@ -6,6 +6,8 @@ import {
   AddressSuggestion,
   MonthlyOccurrence,
   MonthlyPatternType,
+  OneOffOverride,
+  OneOffOverrideInput,
   OfficeInput,
   RecurrenceLevel,
   RecurringRule,
@@ -21,7 +23,14 @@ const weekdays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATUR
 const occurrences: readonly MonthlyOccurrence[] = ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'LAST'];
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Amsterdam',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values['year']}-${values['month']}-${values['day']}`;
 }
 
 function emptyRule(): RecurringRuleInput {
@@ -33,6 +42,15 @@ function emptyRule(): RecurringRuleInput {
     startDate: today(),
     endDate: null,
     status: 'WORK_FROM_HOME',
+    officeId: null,
+  };
+}
+
+function emptyOverride(): OneOffOverrideInput {
+  return {
+    startDate: today(),
+    endDate: null,
+    status: 'NON_WORKING',
     officeId: null,
   };
 }
@@ -68,6 +86,11 @@ export class WorkSchedule implements OnInit {
   readonly ruleSaving = signal(false);
   readonly ruleError = signal<string | null>(null);
   readonly editingRuleId = signal<string | null>(null);
+  readonly oneOffOverrides = signal<OneOffOverride[]>([]);
+  readonly overrideDraft = signal<OneOffOverrideInput>(emptyOverride());
+  readonly overrideSaving = signal(false);
+  readonly overrideError = signal<string | null>(null);
+  readonly editingOverrideId = signal<string | null>(null);
   private searchSequence = 0;
 
   readonly statuses = statuses;
@@ -115,8 +138,21 @@ export class WorkSchedule implements OnInit {
 
   loadRecurringRules(): void {
     this.service.getRecurringRules().subscribe({
-      next: (rules) => this.recurringRules.set(rules),
-      error: () => this.ruleError.set('Recurring rules could not be loaded.'),
+      next: (rules) => {
+        this.recurringRules.set(rules);
+        this.loadOneOffOverrides();
+      },
+      error: () => {
+        this.ruleError.set('Recurring rules could not be loaded.');
+        this.loadOneOffOverrides();
+      },
+    });
+  }
+
+  loadOneOffOverrides(): void {
+    this.service.getOneOffOverrides().subscribe({
+      next: (overrides) => this.oneOffOverrides.set(overrides),
+      error: () => this.overrideError.set('One-off overrides could not be loaded.'),
     });
   }
 
@@ -281,6 +317,129 @@ export class WorkSchedule implements OnInit {
       this.offices().find((office) => office.id === rule.officeId)?.label ??
       'Saved location unavailable'
     );
+  }
+
+  today(): string {
+    return today();
+  }
+
+  setOverrideStatus(status: ScheduleStatus): void {
+    this.overrideDraft.update((draft) => ({
+      ...draft,
+      status,
+      officeId: status === 'OFFICE' ? draft.officeId : null,
+    }));
+    this.overrideError.set(null);
+  }
+
+  setOverrideField<K extends keyof OneOffOverrideInput>(
+    field: K,
+    value: OneOffOverrideInput[K],
+  ): void {
+    this.overrideDraft.update((draft) => ({ ...draft, [field]: value }));
+    this.overrideError.set(null);
+  }
+
+  saveOneOffOverride(): void {
+    const draft = this.overrideDraft();
+    if (!draft.startDate || draft.startDate < today()) {
+      this.overrideError.set('Choose today or a future date.');
+      return;
+    }
+    if (draft.endDate && draft.endDate < draft.startDate) {
+      this.overrideError.set('The end date cannot be before the start date.');
+      return;
+    }
+    if (draft.status === 'OFFICE' && !draft.officeId) {
+      this.overrideError.set('Choose a saved office.');
+      return;
+    }
+
+    this.overrideSaving.set(true);
+    this.overrideError.set(null);
+    const editingId = this.editingOverrideId();
+    const request = editingId
+      ? this.service.editOneOffOverride(editingId, draft)
+      : this.service.addOneOffOverride(draft);
+    request.subscribe({
+      next: (override) => {
+        this.oneOffOverrides.update((overrides) =>
+          [
+            ...(editingId
+              ? overrides.map((current) => (current.id === override.id ? override : current))
+              : [...overrides, override]),
+          ].sort((left, right) => left.startDate.localeCompare(right.startDate)),
+        );
+        this.resetOverrideDraft();
+        this.overrideSaving.set(false);
+      },
+      error: (response: HttpErrorResponse) => {
+        this.overrideError.set(
+          response.error?.detail ?? 'The one-off override could not be saved.',
+        );
+        this.overrideSaving.set(false);
+      },
+    });
+  }
+
+  editOneOffOverride(override: OneOffOverride): void {
+    if (this.isPastOverride(override)) {
+      return;
+    }
+    this.editingOverrideId.set(override.id);
+    this.overrideDraft.set({
+      startDate: override.startDate,
+      endDate: override.endDate,
+      status: override.status,
+      officeId: override.officeId,
+    });
+    this.overrideError.set(null);
+  }
+
+  deleteOneOffOverride(override: OneOffOverride): void {
+    this.service.deleteOneOffOverride(override.id).subscribe({
+      next: () =>
+        this.oneOffOverrides.update((overrides) =>
+          overrides.filter((current) => current.id !== override.id),
+        ),
+      error: () => this.overrideError.set('The one-off override could not be deleted.'),
+    });
+  }
+
+  resetOverrideDraft(): void {
+    this.editingOverrideId.set(null);
+    this.overrideDraft.set(emptyOverride());
+    this.overrideError.set(null);
+  }
+
+  isPastOverride(override: OneOffOverride): boolean {
+    return override.startDate < today();
+  }
+
+  overrideDateLabel(override: OneOffOverride): string {
+    return override.endDate
+      ? `${override.startDate} – ${override.endDate}`
+      : `${override.startDate} (one day)`;
+  }
+
+  overrideOfficeLabel(override: OneOffOverride): string | null {
+    if (override.status !== 'OFFICE' || !override.officeId) {
+      return null;
+    }
+    return (
+      this.offices().find((office) => office.id === override.officeId)?.label ??
+      'Saved location unavailable'
+    );
+  }
+
+  overrideOffices(): SavedOffice[] {
+    const active = this.activeOffices();
+    const officeId = this.overrideDraft().officeId;
+    if (!officeId || active.some((office) => office.id === officeId)) {
+      return active;
+    }
+    const assignedOffice = this.offices().find((office) => office.id === officeId);
+    return assignedOffice ? [...active, assignedOffice] : active;
   }
 
   setDayStatus(day: string, status: ScheduleStatus): void {

@@ -5,8 +5,8 @@
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.github.io/schema/ruleset_2_0_0.xsd">
     <description>
         Broad Java quality checks for the Spring Boot backend. Framework entry points, public APIs,
-        and security configuration require review before removal or suppression, so PMD remains a
-        report that is inspected alongside the compiler and test checks.
+        and security configuration require review before removal or suppression. Violations fail
+        the Maven verify lifecycle so quality regressions cannot pass unnoticed.
     </description>
 
     <!-- Best practices, style, design, documentation, correctness, concurrency, performance,

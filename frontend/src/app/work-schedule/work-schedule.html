@@ -418,5 +418,117 @@
         </button>
       </form>
     </section>
+
+    <section class="card overrides-card" aria-labelledby="overrides-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Exceptional days</p>
+          <h2 id="overrides-title">One-off overrides</h2>
+        </div>
+        @if (editingOverrideId()) {
+          <button type="button" class="quiet" (click)="resetOverrideDraft()">Cancel editing</button>
+        }
+      </div>
+
+      @if (oneOffOverrides().length === 0) {
+        <p class="empty">No one-off overrides yet. Add a holiday or an exceptional work day.</p>
+      } @else {
+        <ul class="rule-list">
+          @for (override of oneOffOverrides(); track override.id) {
+            <li>
+              <div>
+                <strong
+                  >{{ overrideDateLabel(override) }} · {{ statusLabel(override.status) }}</strong
+                >
+                @if (overrideOfficeLabel(override); as officeLabel) {
+                  <span>At {{ officeLabel }}</span>
+                }
+              </div>
+              <div class="office-actions">
+                <button
+                  type="button"
+                  class="quiet"
+                  [disabled]="isPastOverride(override)"
+                  (click)="editOneOffOverride(override)"
+                >
+                  Edit
+                </button>
+                <button type="button" class="danger" (click)="deleteOneOffOverride(override)">
+                  Delete
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+
+      <form class="office-form" (submit)="$event.preventDefault(); saveOneOffOverride()">
+        <h3>{{ editingOverrideId() ? 'Edit one-off override' : 'Add a one-off override' }}</h3>
+        <div class="rule-grid">
+          <label>
+            Start date
+            <input
+              type="date"
+              [min]="today()"
+              [value]="overrideDraft().startDate"
+              (input)="setOverrideField('startDate', $any($event.target).value)"
+              required
+            />
+          </label>
+          <label>
+            End date (optional)
+            <input
+              type="date"
+              [min]="overrideDraft().startDate"
+              [value]="overrideDraft().endDate ?? ''"
+              (input)="setOverrideField('endDate', $any($event.target).value || null)"
+            />
+          </label>
+          <label>
+            Location
+            <select
+              name="override-location"
+              [value]="overrideDraft().status"
+              (change)="setOverrideStatus($any($event.target).value)"
+            >
+              @for (status of statuses; track status) {
+                <option [value]="status" [selected]="status === overrideDraft().status">
+                  {{ statusLabel(status) }}
+                </option>
+              }
+            </select>
+          </label>
+          @if (overrideDraft().status === 'OFFICE') {
+            <label>
+              Office
+              <select
+                name="override-office"
+                [value]="overrideDraft().officeId ?? ''"
+                (change)="setOverrideField('officeId', $any($event.target).value || null)"
+              >
+                @if (overrideOffices().length === 0) {
+                  <option value="" disabled>No saved locations available</option>
+                } @else {
+                  <option value="">Choose an office</option>
+                }
+                @for (office of overrideOffices(); track office.id) {
+                  <option [value]="office.id" [selected]="office.id === overrideDraft().officeId">
+                    {{ office.label }}
+                  </option>
+                }
+              </select>
+            </label>
+          }
+        </div>
+        @if (overrideError()) {
+          <p class="message error" role="alert">{{ overrideError() }}</p>
+        }
+        <button class="primary" type="submit" [disabled]="overrideSaving()">
+          {{
+            overrideSaving() ? 'Saving…' : editingOverrideId() ? 'Save override' : 'Add override'
+          }}
+        </button>
+      </form>
+    </section>
   }
 </main>
