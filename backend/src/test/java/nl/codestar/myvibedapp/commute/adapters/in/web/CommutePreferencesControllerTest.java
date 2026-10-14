@@ -15,6 +15,7 @@ class CommutePreferencesControllerTest extends PostgresIntegrationTest {
     private static final String WAKE_UP_LEAD_PATH = "$.wakeUpLeadMinutes";
     private static final String TRANSIT_ACCESS_BUFFER_PATH = "$.transitAccessBufferMinutes";
     private static final String OFFICE_ARRIVAL_LEAD_PATH = "$.officeArrivalLeadMinutes";
+    private static final String VISIBILITY_CUTOFF_PATH = "$.visibilityCutoff";
 
     @Test
     void returnsDefaultPreferences() throws Exception {
@@ -22,7 +23,8 @@ class CommutePreferencesControllerTest extends PostgresIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(WAKE_UP_LEAD_PATH).value(45))
                 .andExpect(jsonPath(TRANSIT_ACCESS_BUFFER_PATH).value(5))
-                .andExpect(jsonPath(OFFICE_ARRIVAL_LEAD_PATH).value(5));
+                .andExpect(jsonPath(OFFICE_ARRIVAL_LEAD_PATH).value(5))
+                .andExpect(jsonPath(VISIBILITY_CUTOFF_PATH).value("12:00:00"));
     }
 
     @Test
@@ -33,7 +35,8 @@ class CommutePreferencesControllerTest extends PostgresIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(WAKE_UP_LEAD_PATH).value(45))
                 .andExpect(jsonPath(TRANSIT_ACCESS_BUFFER_PATH).value(5))
-                .andExpect(jsonPath(OFFICE_ARRIVAL_LEAD_PATH).value(5));
+                .andExpect(jsonPath(OFFICE_ARRIVAL_LEAD_PATH).value(5))
+                .andExpect(jsonPath(VISIBILITY_CUTOFF_PATH).value("12:00:00"));
     }
 
     @Test
@@ -44,19 +47,22 @@ class CommutePreferencesControllerTest extends PostgresIntegrationTest {
                                 {
                                   "wakeUpLeadMinutes": 0,
                                   "transitAccessBufferMinutes": 17,
-                                  "officeArrivalLeadMinutes": 12
+                                  "officeArrivalLeadMinutes": 12,
+                                  "visibilityCutoff": "10:30"
                                 }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(WAKE_UP_LEAD_PATH).value(0))
                 .andExpect(jsonPath(TRANSIT_ACCESS_BUFFER_PATH).value(17))
-                .andExpect(jsonPath(OFFICE_ARRIVAL_LEAD_PATH).value(12));
+                .andExpect(jsonPath(OFFICE_ARRIVAL_LEAD_PATH).value(12))
+                .andExpect(jsonPath(VISIBILITY_CUTOFF_PATH).value("10:30:00"));
 
         mockMvc.perform(get(ENDPOINT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(WAKE_UP_LEAD_PATH).value(0))
                 .andExpect(jsonPath(TRANSIT_ACCESS_BUFFER_PATH).value(17))
-                .andExpect(jsonPath(OFFICE_ARRIVAL_LEAD_PATH).value(12));
+                .andExpect(jsonPath(OFFICE_ARRIVAL_LEAD_PATH).value(12))
+                .andExpect(jsonPath(VISIBILITY_CUTOFF_PATH).value("10:30:00"));
     }
 
     @Test
@@ -67,7 +73,8 @@ class CommutePreferencesControllerTest extends PostgresIntegrationTest {
                                 {
                                   "wakeUpLeadMinutes": 2147483647,
                                   "transitAccessBufferMinutes": 2147483647,
-                                  "officeArrivalLeadMinutes": 2147483647
+                                  "officeArrivalLeadMinutes": 2147483647,
+                                  "visibilityCutoff": "12:00"
                                 }
                                 """))
                 .andExpect(status().isOk());
@@ -81,19 +88,20 @@ class CommutePreferencesControllerTest extends PostgresIntegrationTest {
                                 {
                                   "wakeUpLeadMinutes": -1,
                                   "transitAccessBufferMinutes": 5,
-                                  "officeArrivalLeadMinutes": 5
+                                  "officeArrivalLeadMinutes": 5,
+                                  "visibilityCutoff": "12:00"
                                 }
                                 """))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void rejectsFractionalMinutes() throws Exception {
+    void rejectsMissingVisibilityCutoff() throws Exception {
         mockMvc.perform(put(ENDPOINT)
                         .contentType(JSON_CONTENT_TYPE)
                         .content("""
                                 {
-                                  "wakeUpLeadMinutes": 5.5,
+                                  "wakeUpLeadMinutes": 5,
                                   "transitAccessBufferMinutes": 5,
                                   "officeArrivalLeadMinutes": 5
                                 }

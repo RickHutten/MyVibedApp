@@ -28,6 +28,8 @@ These rules apply to `backend/` and supplement the repository-level `AGENTS.md`.
 - Keep credentials outside source control.
 - Configure finite connection and response timeouts.
 - Translate provider responses and failures into application-owned models and exceptions.
+- Log each operational failure exactly once. When an adapter propagates an application-owned exception, preserve the original cause and let the inbound exception handler log it; do not log before rethrowing. When an adapter translates a provider failure to `Optional.empty()` or another safe unavailable result, log it once at the adapter boundary with non-sensitive request context and the original exception.
+- Treat expected no-route or no-data outcomes as normal business results (`DEBUG` or no log). Log transport, HTTP, timeout, and malformed-response failures at an appropriate warning/error level, but do not log every parser branch for the same provider response.
 - Do not add retries, caching, or fallback behavior unless the approved story requires them.
 ## Persistence
 - Use PostgreSQL for persistent application data; do not substitute H2 for production behavior.
@@ -53,6 +55,6 @@ These rules apply to `backend/` and supplement the repository-level `AGENTS.md`.
 - Prefer functional style code, avoid `void` functions. Use a functional core for domain decisions and transformations, with an imperative shell at HTTP, persistence, and external-system boundaries.
 - Keep methods focused and side effects explicit.
 - Handle failures at the layer that can add meaningful context; do not catch exceptions merely to log and rethrow them.
-- Use structured logging and never log secrets or precise personal data.
+- Use structured logging and never log secrets, provider payloads, credentials, or precise personal data. Prefer Lombok `@Slf4j` with parameterized SLF4J messages; pass the throwable as the final argument rather than interpolating its message separately.
 - Do not add speculative abstractions, generic frameworks, or unused extension points.
 - Match the existing formatting; do not introduce a formatter or lint plugin without user approval.

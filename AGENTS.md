@@ -57,6 +57,19 @@ Do not silently expand scope while planning or implementing. Put unresolved deci
 
 Use the story identifier in related branch names, plan filenames, pull requests, and commit messages. Example: `WEA-001: add current weather endpoint`. Never create a commit unless explicitly asked.
 
+## Delegated implementation and review
+
+For every approved non-trivial coding story:
+
+1. Keep the main conversation responsible for story scope, user decisions, synthesis, integration, and final verification.
+2. Delegate implementation to a focused child agent with the approved story, implementation plan, relevant files, constraints, and test commands. Keep the implementation agent's final report concise and structured.
+3. Do not use the implementation agent as the reviewer. Code-editing child agents must have an isolated, explicitly owned workspace and must not edit the same working tree concurrently.
+4. After implementation completes, delegate a fresh review agent with the story and acceptance criteria, implementation plan, changed files or diff, and available test results. Do not pass the full conversation transcript unless it is necessary.
+5. Require the review agent to inspect the actual changes and run relevant checks. Its report should contain only the verdict, findings, missing tests, regressions, and required changes.
+6. The main conversation resolves review findings and performs the final verification before reporting completion.
+
+Use parallel reconnaissance agents only when they materially reduce uncertainty. Do not create separate backend and frontend agents for a change that clearly affects only one area.
+
 ## Backend conventions
 
 - Use Java 25 and Spring Boot.

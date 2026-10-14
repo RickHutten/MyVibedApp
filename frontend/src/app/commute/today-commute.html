@@ -1,0 +1,60 @@
+@if (status() !== 'ready' || commute()?.status !== 'HIDDEN') {
+  <section class="commute-card" aria-label="Today's outbound commute">
+    @if (status() === 'loading') {
+      <p>Loading commute…</p>
+    } @else if (status() === 'unavailable') {
+      <p>Commute is unavailable</p>
+    } @else if (commute(); as current) {
+      @if (current.status === 'AVAILABLE') {
+        <header>
+          <p class="eyebrow">Today's commute</p>
+        </header>
+        <dl class="timings">
+          <div>
+            <dt>Wake up</dt>
+            <dd>{{ time(current.wakeUpTime) }}</dd>
+          </div>
+          <div>
+            <dt>Leave home</dt>
+            <dd>{{ time(current.leaveHomeTime) }}</dd>
+          </div>
+          <div>
+            <dt>Arrival</dt>
+            <dd>{{ time(current.plannedArrivalTime) }}</dd>
+          </div>
+        </dl>
+        <ol class="segments" aria-label="Complete commute itinerary">
+          @for (segment of current.segments; track $index) {
+            <li class="segment">
+              <div class="segment-time">
+                <time [attr.datetime]="segment.departureTime">{{
+                  time(segment.departureTime)
+                }}</time>
+                <time [attr.datetime]="segment.arrivalTime">{{ time(segment.arrivalTime) }}</time>
+              </div>
+              <div class="segment-rail" aria-hidden="true">
+                <span class="segment-node"></span>
+              </div>
+              <div class="segment-content">
+                <div class="segment-mode-row">
+                  <p class="segment-mode">{{ segmentMode(segment) }}</p>
+                  @if (segmentMeta(segment); as meta) {
+                    <p class="segment-meta">{{ meta }}</p>
+                  }
+                </div>
+                @if (
+                  segmentRoute(segment, $index, current.segments, current.destinationOffice);
+                  as route
+                ) {
+                  <p class="segment-route">{{ route }}</p>
+                }
+              </div>
+            </li>
+          }
+        </ol>
+      } @else if (current.status === 'UNAVAILABLE') {
+        <p>No public transport route available</p>
+      }
+    }
+  </section>
+}

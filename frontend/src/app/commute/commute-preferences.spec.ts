@@ -8,6 +8,7 @@ const defaults = {
   wakeUpLeadMinutes: 45,
   transitAccessBufferMinutes: 5,
   officeArrivalLeadMinutes: 5,
+  visibilityCutoff: '12:00',
 };
 
 describe('CommutePreferences', () => {
@@ -56,11 +57,13 @@ describe('CommutePreferences', () => {
       wakeUpLeadMinutes: 30,
       transitAccessBufferMinutes: 8,
       officeArrivalLeadMinutes: 10,
+      visibilityCutoff: '12:00',
     });
     request.flush({
       wakeUpLeadMinutes: 30,
       transitAccessBufferMinutes: 8,
       officeArrivalLeadMinutes: 10,
+      visibilityCutoff: '12:00',
     });
     fixture.detectChanges();
 

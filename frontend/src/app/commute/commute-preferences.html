@@ -69,10 +69,25 @@
         </span>
       </label>
 
+      <label>
+        Commute visibility cutoff
+        <span class="hint">Hide today’s commute at this local time.</span>
+        <span class="input-with-unit">
+          <input
+            type="time"
+            [value]="visibilityCutoff()"
+            (input)="setVisibilityCutoff($event)"
+            name="visibilityCutoff"
+            required
+          />
+          <span>local time</span>
+        </span>
+      </label>
+
       @if (error()) {
         <p class="message error" role="alert">{{ error() }}</p>
       } @else if (saved()) {
-        <p class="message success" role="status">Saved</p>
+        <p class="message success">Saved</p>
       }
     </form>
   }

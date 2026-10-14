@@ -6,6 +6,7 @@ export interface CommutePreferencesValues {
   wakeUpLeadMinutes: number;
   transitAccessBufferMinutes: number;
   officeArrivalLeadMinutes: number;
+  visibilityCutoff: string;
 }
 
 @Injectable({ providedIn: 'root' })

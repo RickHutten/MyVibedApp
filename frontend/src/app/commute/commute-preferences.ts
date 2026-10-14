@@ -12,6 +12,7 @@ export class CommutePreferences implements OnInit {
   readonly wakeUpLeadMinutes = signal(45);
   readonly transitAccessBufferMinutes = signal(5);
   readonly officeArrivalLeadMinutes = signal(5);
+  readonly visibilityCutoff = signal('12:00');
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly saved = signal(false);
@@ -83,11 +84,16 @@ export class CommutePreferences implements OnInit {
     this.officeArrivalLeadMinutes.set(this.numberFromInput(event));
   }
 
+  setVisibilityCutoff(event: Event): void {
+    this.visibilityCutoff.set((event.target as HTMLInputElement).value);
+  }
+
   private values(): CommutePreferencesValues {
     return {
       wakeUpLeadMinutes: this.wakeUpLeadMinutes(),
       transitAccessBufferMinutes: this.transitAccessBufferMinutes(),
       officeArrivalLeadMinutes: this.officeArrivalLeadMinutes(),
+      visibilityCutoff: this.visibilityCutoff(),
     };
   }
 
@@ -95,11 +101,17 @@ export class CommutePreferences implements OnInit {
     this.wakeUpLeadMinutes.set(preferences.wakeUpLeadMinutes);
     this.transitAccessBufferMinutes.set(preferences.transitAccessBufferMinutes);
     this.officeArrivalLeadMinutes.set(preferences.officeArrivalLeadMinutes);
+    this.visibilityCutoff.set(preferences.visibilityCutoff ?? '12:00');
   }
 
   private isValid(preferences: CommutePreferencesValues): boolean {
-    return Object.values(preferences).every(
-      (value) => Number.isFinite(value) && Number.isInteger(value) && value >= 0,
+    return (
+      [
+        preferences.wakeUpLeadMinutes,
+        preferences.transitAccessBufferMinutes,
+        preferences.officeArrivalLeadMinutes,
+      ].every((value) => Number.isFinite(value) && Number.isInteger(value) && value >= 0) &&
+      /^([01]\d|2[0-3]):[0-5]\d$/.test(preferences.visibilityCutoff)
     );
   }
 

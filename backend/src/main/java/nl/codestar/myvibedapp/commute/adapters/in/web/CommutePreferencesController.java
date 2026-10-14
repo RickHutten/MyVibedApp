@@ -1,7 +1,6 @@
 package nl.codestar.myvibedapp.commute.adapters.in.web;
 
 import jakarta.validation.Valid;
-import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import nl.codestar.myvibedapp.commute.application.CommutePreferencesService;
@@ -27,13 +26,10 @@ final class CommutePreferencesController {
     @PutMapping
     CommutePreferencesResponse replace(@Valid @RequestBody final CommutePreferencesRequest request) {
         final CommutePreferences preferences = new CommutePreferences(
-                wholeMinutes(request.wakeUpLeadMinutes()),
-                wholeMinutes(request.transitAccessBufferMinutes()),
-                wholeMinutes(request.officeArrivalLeadMinutes()));
+                request.wakeUpLeadMinutes(),
+                request.transitAccessBufferMinutes(),
+                request.officeArrivalLeadMinutes(),
+                request.visibilityCutoff());
         return CommutePreferencesResponse.from(service.replace(preferences));
-    }
-
-    private long wholeMinutes(final BigDecimal value) {
-        return value.longValueExact();
     }
 }

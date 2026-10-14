@@ -3,7 +3,6 @@ package nl.codestar.myvibedapp.schedule.adapters.out.photon;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import nl.codestar.myvibedapp.schedule.application.GeocodingPort;
 import nl.codestar.myvibedapp.schedule.application.GeocodingUnavailableException;
@@ -37,13 +36,16 @@ final class PhotonGeocodingAdapter implements GeocodingPort {
     @Override
     public List<AddressSuggestion> search(final String query) {
         try {
-            final JsonNode response = Objects.requireNonNull(restClient.get()
+            final JsonNode response = restClient.get()
                     .uri(uriBuilder -> uriBuilder.path("/api")
                             .queryParam("q", query)
                             .queryParam("limit", 5)
                             .build())
                     .retrieve()
-                    .body(JsonNode.class));
+                    .body(JsonNode.class);
+            if (response == null) {
+                throw new GeocodingUnavailableException(new IllegalStateException("Photon response is empty"));
+            }
             final JsonNode features = response.path("features");
             final List<AddressSuggestion> suggestions = new ArrayList<>();
             if (!features.isArray()) {

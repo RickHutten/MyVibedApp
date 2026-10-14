@@ -12,6 +12,7 @@
     <!-- Best practices, style, design, documentation, correctness, concurrency, performance,
          and security checks. Keep the categories broad so new PMD rules are picked up on upgrade. -->
     <rule ref="category/java/bestpractices.xml">
+        <exclude name="GuardLogStatement" />
         <exclude name="UnitTestContainsTooManyAsserts" />
         <exclude name="UnitTestShouldIncludeAssert" />
     </rule>

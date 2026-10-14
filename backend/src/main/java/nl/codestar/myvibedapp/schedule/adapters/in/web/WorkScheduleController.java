@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import nl.codestar.myvibedapp.schedule.application.GeocodingUnavailableException;
 import nl.codestar.myvibedapp.schedule.application.WorkScheduleService;
 import nl.codestar.myvibedapp.schedule.domain.SavedOffice;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
@@ -76,7 +78,8 @@ final class WorkScheduleController {
     }
 
     @ExceptionHandler(GeocodingUnavailableException.class)
-    ResponseEntity<ErrorResponse> handleGeocodingUnavailable() {
+    ResponseEntity<ErrorResponse> handleGeocodingUnavailable(final GeocodingUnavailableException exception) {
+        log.warn("Geocoding provider unavailable", exception);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(new ErrorResponse("Address search is unavailable"));
     }

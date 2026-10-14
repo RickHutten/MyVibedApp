@@ -75,8 +75,9 @@ final class OpenMeteoWeatherProvider implements WeatherProvider {
 
     @Override
     public CurrentWeather getCurrentWeather(final WeatherLocation location) {
+        final OpenMeteoResponse response;
         try {
-            OpenMeteoResponse response = restClient.get()
+            response = restClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/v1/forecast")
                             .queryParam("latitude", location.latitude())
@@ -90,11 +91,19 @@ final class OpenMeteoWeatherProvider implements WeatherProvider {
                             .build())
                     .retrieve()
                     .body(OpenMeteoResponse.class);
-            if (response == null) {
-                throw new WeatherUnavailableException("Open-Meteo response is incomplete");
-            }
+        } catch (RestClientException exception) {
+            throw new WeatherUnavailableException("Unable to retrieve current weather", exception);
+        }
+        if (response == null) {
+            throw new WeatherUnavailableException("Open-Meteo response is incomplete");
+        }
+        return mapResponse(response);
+    }
+
+    private CurrentWeather mapResponse(final OpenMeteoResponse response) {
+        try {
             return map(response);
-        } catch (RestClientException | DateTimeException | IllegalArgumentException exception) {
+        } catch (DateTimeException | IllegalArgumentException exception) {
             throw new WeatherUnavailableException("Unable to retrieve current weather", exception);
         }
     }

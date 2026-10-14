@@ -1,7 +1,7 @@
 # Implementation plan: SCH-005 — Configure commute timing preferences
 
 Related story: [SCH-005 — Configure commute timing preferences](../../features/schedule/SCH-005-configure-commute-preferences.md)
-Status: Approved
+Status: Implemented
 
 ## Approach
 

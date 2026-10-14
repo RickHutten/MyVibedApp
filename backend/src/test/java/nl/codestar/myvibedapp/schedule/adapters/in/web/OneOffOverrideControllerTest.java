@@ -9,11 +9,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
+import nl.codestar.myvibedapp.support.postgresql.FixedScheduleClockConfiguration;
 import nl.codestar.myvibedapp.support.postgresql.PostgresIntegrationTest;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MvcResult;
 
+@Import(FixedScheduleClockConfiguration.class)
 class OneOffOverrideControllerTest extends PostgresIntegrationTest {
 
     private static final String ENDPOINT = "/api/work-schedule/overrides";

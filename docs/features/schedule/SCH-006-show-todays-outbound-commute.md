@@ -7,7 +7,7 @@
 
 ## Description
 
-As a user, I want to see how to get to today’s office so that I know when to wake up and leave home.
+As a user, I want to see the complete journey to today’s office so that I know when to wake up, when to leave home, and exactly how to get there.
 
 The commute card is a morning view: it is available from local midnight until the configurable cutoff in the commute settings, which defaults to 12:00.
 
@@ -19,9 +19,11 @@ The commute card is a morning view: it is available from local midnight until th
   - Visibility from local midnight until the configured cutoff
   - Wake-up time
   - Leave-home time
-  - Planned arrival time
-  - First public-transport departure, route, direction, service, and platform details when provided
-  - Details for each transfer in the selected route
+  - Planned arrival time and destination office
+  - The complete door-to-door itinerary, including walking, public-transport, transfer, and final walking segments when provided
+  - Transport mode, service, direction, boarding stop, exit stop, departure time, arrival time, and platform details for each public-transport segment when provided
+  - Clear transfer actions and locations
+  - The complete itinerary shown by default without requiring interaction
   - A clear unavailable state when no qualifying route can be found
 - **Out of scope:**
   - Return commute
@@ -38,10 +40,15 @@ The commute card is a morning view: it is available from local midnight until th
 - [ ] The selected route targets the scheduled working-hours start minus the configured office-arrival lead time from [SCH-005](./SCH-005-configure-commute-preferences.md).
 - [ ] The selected route arrives at the office no later than the target arrival time.
 - [ ] When multiple qualifying routes are available, the dashboard uses the transit provider’s default route selection.
-- [ ] The dashboard shows the recommended wake-up time, leave-home time, and planned arrival time.
-- [ ] The dashboard shows the first departure with its line or service and direction, followed by each transfer in the selected route.
-- [ ] The primary route instruction uses the form `Take [service] toward [direction] at [time] from platform [platform]` when a platform is provided, such as `Take bus 34 toward Central Station at 07:25 from platform 3.`
-- [ ] When the provider does not provide a platform, the primary route instruction omits the platform rather than showing an unknown or placeholder value.
+- [ ] The dashboard shows the recommended wake-up time, leave-home time, planned arrival time, destination office, total journey duration, and number of transfers when available.
+- [ ] The dashboard shows the complete selected itinerary in chronological order by default, including every walking and public-transport segment provided by the transit provider.
+- [ ] Each walking segment is identified as walking and shows its departure and arrival locations and times when those locations are provided.
+- [ ] Each public-transport segment shows its transport mode, service, direction, departure time and boarding stop, arrival time and exit stop, and platform when provided.
+- [ ] A public-transport instruction clearly identifies the action and locations, such as `Board Metro 53 toward Gaasperplas at 07:34 at [boarding stop], platform 1; get off at [exit stop] at 07:38.`
+- [ ] The dashboard labels departure and arrival locations so that a time range is never shown without explaining what happens during that interval.
+- [ ] Transfer walking or transfer actions are shown between public-transport segments when provided, including the transfer location and duration when available.
+- [ ] The final walking segment to the destination office is shown when provided.
+- [ ] When the provider does not provide a mode, stop, or platform, the dashboard omits that detail rather than showing an unknown, undefined, or placeholder value; it does not invent a value.
 - [ ] The dashboard shows no commute information when today’s resolved status is work from home or non-working.
 - [ ] When no route can arrive by the target arrival time, the dashboard omits commute times and route details and shows `No public transport route available`.
 
@@ -56,4 +63,6 @@ The commute card is a morning view: it is available from local midnight until th
 - Wake-up display rounding and leave-home calculation follow [SCH-005](./SCH-005-configure-commute-preferences.md).
 - The dashboard consumes the resolved office location from [SCH-004](./SCH-004-resolve-upcoming-work-locations.md); it does not ask the user to select a location while viewing the commute.
 - The route provider’s default selection is used; this story does not add a user-configurable transport or route preference.
-- Example wording: `Take bus 34 toward Central Station at 07:25 from platform 3.` When no platform is provided, omit the final platform phrase.
+- The complete itinerary is visible by default because the user needs to understand each action, not only the departure and arrival times.
+- The application-owned route model must preserve all provider-supplied walking and public-transport segments. It must not reduce the journey to public-transport legs or retain only the initial walking duration.
+- Transport mode and boarding/exit stop names are provider data translated into user-facing route details; provider response models must not cross the application or HTTP boundary.
