@@ -101,7 +101,7 @@ export class CommutePreferences implements OnInit {
     this.wakeUpLeadMinutes.set(preferences.wakeUpLeadMinutes);
     this.transitAccessBufferMinutes.set(preferences.transitAccessBufferMinutes);
     this.officeArrivalLeadMinutes.set(preferences.officeArrivalLeadMinutes);
-    this.visibilityCutoff.set(preferences.visibilityCutoff ?? '12:00');
+    this.visibilityCutoff.set(this.timeInputValue(preferences.visibilityCutoff));
   }
 
   private isValid(preferences: CommutePreferencesValues): boolean {
@@ -117,5 +117,15 @@ export class CommutePreferences implements OnInit {
 
   private numberFromInput(event: Event): number {
     return Number((event.target as HTMLInputElement).value);
+  }
+
+  private timeInputValue(value: string | null | undefined): string {
+    if (value == null) {
+      return '12:00';
+    }
+
+    return /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?$/.test(value)
+      ? value.slice(0, 5)
+      : value;
   }
 }

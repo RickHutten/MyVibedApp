@@ -8,7 +8,7 @@ const defaults = {
   wakeUpLeadMinutes: 45,
   transitAccessBufferMinutes: 5,
   officeArrivalLeadMinutes: 5,
-  visibilityCutoff: '12:00',
+  visibilityCutoff: '12:00:00',
 };
 
 describe('CommutePreferences', () => {
@@ -29,6 +29,10 @@ describe('CommutePreferences', () => {
       'input[name="wakeUpLeadMinutes"]',
     ) as HTMLInputElement;
     expect(wakeUpInput.value).toBe('45');
+    const visibilityCutoffInput = fixture.nativeElement.querySelector(
+      'input[name="visibilityCutoff"]',
+    ) as HTMLInputElement;
+    expect(visibilityCutoffInput.value).toBe('12:00');
     const content = (fixture.nativeElement as HTMLElement).textContent;
     expect(content).toContain('First transit access buffer');
     expect(content).toContain('switches the dashboard to the next office-day preview');
@@ -92,6 +96,25 @@ describe('CommutePreferences', () => {
     component.wakeUpLeadMinutes.set(5.5);
     component.save();
     expect(component.error()).toContain('whole minutes');
+    expect(TestBed.inject(HttpTestingController).match('/api/commute/preferences')).toHaveLength(0);
+  });
+
+  it('does not hide a malformed visibility cutoff returned by the API', async () => {
+    await TestBed.configureTestingModule({
+      imports: [CommutePreferences],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(CommutePreferences);
+    fixture.detectChanges();
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/commute/preferences')
+      .flush({ ...defaults, visibilityCutoff: '12:00unexpected' });
+    fixture.detectChanges();
+
+    fixture.componentInstance.save();
+
+    expect(fixture.componentInstance.error()).toContain('whole minutes');
     expect(TestBed.inject(HttpTestingController).match('/api/commute/preferences')).toHaveLength(0);
   });
 });
