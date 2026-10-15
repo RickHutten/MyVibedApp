@@ -1,14 +1,12 @@
 package nl.codestar.myvibedapp.support.postgresql;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+@RequiredArgsConstructor
 public final class ApplicationDatabaseCleaner {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public ApplicationDatabaseCleaner(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     public void resetScheduleData() {
         jdbcTemplate.execute("truncate table one_off_schedule_overrides, recurring_schedule_rules, "

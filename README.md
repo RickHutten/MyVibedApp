@@ -69,8 +69,8 @@ POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
 ```
 
 The local profile's connection settings are in
-`backend/src/main/resources/application-local.properties`; the file is ignored
-by Git and reads the password from `POSTGRES_PASSWORD`.
+`backend/src/main/resources/application-local.properties`; it reads the password
+from `POSTGRES_PASSWORD`.
 
 ### Backend tests
 

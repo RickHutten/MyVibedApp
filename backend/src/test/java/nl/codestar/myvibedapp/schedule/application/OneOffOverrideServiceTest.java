@@ -16,6 +16,7 @@ import nl.codestar.myvibedapp.schedule.domain.SavedOffice;
 import nl.codestar.myvibedapp.schedule.domain.ScheduleStatus;
 import nl.codestar.myvibedapp.schedule.domain.WorkSchedule;
 import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class OneOffOverrideServiceTest {
@@ -24,10 +25,43 @@ class OneOffOverrideServiceTest {
     private static final Clock TODAY = Clock.fixed(
             Instant.parse("2026-10-07T10:00:00Z"), ZONE);
 
+    private InMemoryScheduleStore store;
+    private OneOffOverrideService service;
+
+    @BeforeEach
+    void setUp() {
+        store = new InMemoryScheduleStore();
+        service = new OneOffOverrideService(store, TODAY);
+    }
+
+    @Test
+    void addsOverrideAndListsIt() {
+        final OneOffOverride override = override(
+                LocalDate.of(2026, 10, 8), null, ScheduleStatus.NON_WORKING, null);
+
+        assertThat(service.add(override)).isEqualTo(override);
+        assertThat(service.overrides()).containsExactly(override);
+    }
+
+    @Test
+    void editsExistingOverrideAndPreservesItsIdentifier() {
+        final OneOffOverride existing = override(
+                LocalDate.of(2026, 10, 8), null, ScheduleStatus.NON_WORKING, null);
+        final OneOffOverride replacement = override(
+                LocalDate.of(2026, 10, 9), LocalDate.of(2026, 10, 10), ScheduleStatus.WORK_FROM_HOME, null);
+        store.overrides.add(existing);
+
+        final OneOffOverride updated = service.edit(existing.id(), replacement);
+
+        assertThat(updated.id()).isEqualTo(existing.id());
+        assertThat(updated.startDate()).isEqualTo(replacement.startDate());
+        assertThat(updated.endDate()).isEqualTo(replacement.endDate());
+        assertThat(updated.status()).isEqualTo(replacement.status());
+        assertThat(service.overrides()).containsExactly(updated);
+    }
+
     @Test
     void rejectsCreatingAnOverrideInThePast() {
-        final InMemoryScheduleStore store = new InMemoryScheduleStore();
-        final OneOffOverrideService service = new OneOffOverrideService(store, TODAY);
         final OneOffOverride override = override(
                 LocalDate.of(2026, 10, 6), null, ScheduleStatus.NON_WORKING, null);
 
@@ -41,9 +75,7 @@ class OneOffOverrideServiceTest {
     void rejectsOverlappingRangeWithoutChangingExistingOverride() {
         final OneOffOverride existing = override(
                 LocalDate.of(2026, 10, 8), LocalDate.of(2026, 10, 10), ScheduleStatus.NON_WORKING, null);
-        final InMemoryScheduleStore store = new InMemoryScheduleStore();
         store.overrides.add(existing);
-        final OneOffOverrideService service = new OneOffOverrideService(store, TODAY);
         final OneOffOverride overlapping = override(
                 LocalDate.of(2026, 10, 10), LocalDate.of(2026, 10, 12), ScheduleStatus.WORK_FROM_HOME, null);
 
@@ -58,9 +90,7 @@ class OneOffOverrideServiceTest {
     void rejectsRangeThatContainsAnExistingOverride() {
         final OneOffOverride existing = override(
                 LocalDate.of(2026, 10, 9), LocalDate.of(2026, 10, 10), ScheduleStatus.NON_WORKING, null);
-        final InMemoryScheduleStore store = new InMemoryScheduleStore();
         store.overrides.add(existing);
-        final OneOffOverrideService service = new OneOffOverrideService(store, TODAY);
         final OneOffOverride containing = override(
                 LocalDate.of(2026, 10, 8), LocalDate.of(2026, 10, 11), ScheduleStatus.WORK_FROM_HOME, null);
 
@@ -75,9 +105,7 @@ class OneOffOverrideServiceTest {
     void allowsAdjacentRanges() {
         final OneOffOverride existing = override(
                 LocalDate.of(2026, 10, 8), LocalDate.of(2026, 10, 10), ScheduleStatus.NON_WORKING, null);
-        final InMemoryScheduleStore store = new InMemoryScheduleStore();
         store.overrides.add(existing);
-        final OneOffOverrideService service = new OneOffOverrideService(store, TODAY);
         final OneOffOverride adjacent = override(
                 LocalDate.of(2026, 10, 11), LocalDate.of(2026, 10, 12), ScheduleStatus.WORK_FROM_HOME, null);
 
@@ -92,10 +120,8 @@ class OneOffOverrideServiceTest {
                 LocalDate.of(2026, 10, 8), LocalDate.of(2026, 10, 10), ScheduleStatus.NON_WORKING, null);
         final OneOffOverride other = override(
                 LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 13), ScheduleStatus.WORK_FROM_HOME, null);
-        final InMemoryScheduleStore store = new InMemoryScheduleStore();
         store.overrides.add(existing);
         store.overrides.add(other);
-        final OneOffOverrideService service = new OneOffOverrideService(store, TODAY);
 
         final OneOffOverride replacement = override(
                 LocalDate.of(2026, 10, 10), LocalDate.of(2026, 10, 12), ScheduleStatus.NON_WORKING, null);
@@ -111,9 +137,7 @@ class OneOffOverrideServiceTest {
     void allowsDeletingPastOverrideButDoesNotAllowEditingIt() {
         final OneOffOverride existing = override(
                 LocalDate.of(2026, 10, 6), LocalDate.of(2026, 10, 7), ScheduleStatus.NON_WORKING, null);
-        final InMemoryScheduleStore store = new InMemoryScheduleStore();
         store.overrides.add(existing);
-        final OneOffOverrideService service = new OneOffOverrideService(store, TODAY);
 
         assertThatThrownBy(() -> service.edit(existing.id(), override(
                 existing.startDate(), existing.endDate(), ScheduleStatus.WORK_FROM_HOME, null)))
@@ -123,6 +147,77 @@ class OneOffOverrideServiceTest {
         service.delete(existing.id());
 
         assertThat(store.overrides).isEmpty();
+    }
+
+    @Test
+    void rejectsAddingOverrideForUnknownOffice() {
+        final OneOffOverride officeOverride = override(
+                LocalDate.of(2026, 10, 8), null, ScheduleStatus.OFFICE, UUID.randomUUID());
+
+        assertThatThrownBy(() -> service.add(officeOverride))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Office was not found");
+    }
+
+    @Test
+    void rejectsAddingOverrideForDeletedOffice() {
+        final UUID officeId = UUID.randomUUID();
+        store.offices.add(new SavedOffice(officeId, "Old office", "Address", 52, 4, true));
+        final OneOffOverride officeOverride = override(
+                LocalDate.of(2026, 10, 8), null, ScheduleStatus.OFFICE, officeId);
+
+        assertThatThrownBy(() -> service.add(officeOverride))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A deleted office cannot be selected for a new override");
+        assertThat(store.overrides).isEmpty();
+    }
+
+    @Test
+    void allowsEditingOverrideThatKeepsItsDeletedOfficeAssignment() {
+        final UUID officeId = UUID.randomUUID();
+        final OneOffOverride existing = override(
+                LocalDate.of(2026, 10, 8), null, ScheduleStatus.OFFICE, officeId);
+        final OneOffOverride replacement = override(
+                LocalDate.of(2026, 10, 9), null, ScheduleStatus.OFFICE, officeId);
+        store.offices.add(new SavedOffice(officeId, "Old office", "Address", 52, 4, true));
+        store.overrides.add(existing);
+
+        final OneOffOverride updated = service.edit(existing.id(), replacement);
+
+        assertThat(updated.id()).isEqualTo(existing.id());
+        assertThat(updated.startDate()).isEqualTo(replacement.startDate());
+        assertThat(updated.officeId()).isEqualTo(officeId);
+    }
+
+    @Test
+    void rejectsEditingToAPastStartDate() {
+        final OneOffOverride existing = override(
+                LocalDate.of(2026, 10, 8), null, ScheduleStatus.NON_WORKING, null);
+        final OneOffOverride replacement = override(
+                LocalDate.of(2026, 10, 6), null, ScheduleStatus.WORK_FROM_HOME, null);
+        store.overrides.add(existing);
+
+        assertThatThrownBy(() -> service.edit(existing.id(), replacement))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("An override start date cannot be in the past");
+        assertThat(store.overrides).containsExactly(existing);
+    }
+
+    @Test
+    void rejectsEditingMissingOverride() {
+        final OneOffOverride replacement = override(
+                LocalDate.of(2026, 10, 8), null, ScheduleStatus.NON_WORKING, null);
+
+        assertThatThrownBy(() -> service.edit(UUID.randomUUID(), replacement))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("One-off override was not found");
+    }
+
+    @Test
+    void rejectsDeletingMissingOverride() {
+        assertThatThrownBy(() -> service.delete(UUID.randomUUID()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("One-off override was not found");
     }
 
     private static OneOffOverride override(
@@ -135,6 +230,7 @@ class OneOffOverrideServiceTest {
 
     private static final class InMemoryScheduleStore implements ScheduleStore {
 
+        private final List<SavedOffice> offices = new ArrayList<>();
         private final List<OneOffOverride> overrides = new ArrayList<>();
 
         @Override
@@ -149,7 +245,7 @@ class OneOffOverrideServiceTest {
 
         @Override
         public List<SavedOffice> offices(final boolean includeDeleted) {
-            return List.of();
+            return List.copyOf(offices);
         }
 
         @Override

@@ -9,8 +9,8 @@ export interface DashboardLocation {
 
 const AMSTERDAM: DashboardLocation = {
   name: 'Amsterdam',
-  latitude: 52.3676,
-  longitude: 4.9041,
+  latitude: 52.3287776,
+  longitude: 4.9647344,
   timeZone: 'Europe/Amsterdam',
 };
 
