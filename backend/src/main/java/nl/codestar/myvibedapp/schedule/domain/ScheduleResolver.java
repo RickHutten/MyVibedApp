@@ -9,10 +9,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
 
-@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ScheduleResolver {
 
     private static final long MAX_SEARCH_DAYS = 366L * 400L;

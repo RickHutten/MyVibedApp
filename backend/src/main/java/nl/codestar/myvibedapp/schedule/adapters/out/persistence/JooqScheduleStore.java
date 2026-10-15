@@ -67,6 +67,7 @@ class JooqScheduleStore implements ScheduleStore {
                     if (officeId != null) {
                         daysRecord.setOfficeId(officeId);
                     }
+                    daysRecord.touched(WORK_SCHEDULE_DAYS.OFFICE_ID, true);
                     return daysRecord;
                 })
                 .toList()).execute();

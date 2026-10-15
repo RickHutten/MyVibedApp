@@ -11,6 +11,8 @@ import java.util.UUID;
 import nl.codestar.myvibedapp.support.postgresql.PostgresIntegrationTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -18,14 +20,19 @@ class WorkScheduleControllerTest extends PostgresIntegrationTest {
 
     private static final String WORK_SCHEDULE_ENDPOINT = "/api/work-schedule";
     private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final String DEFAULT_START_TIME = "09:00";
+    private static final String DEFAULT_END_TIME = "17:00";
+    private static final String WORK_FROM_HOME_STATUS = "WORK_FROM_HOME";
+    private static final String MONDAY_STATUS_PATH = "$.days[0].status";
+    private static final String MONDAY_OFFICE_ID_PATH = "$.days[0].officeId";
 
 
     @Test
     void returnsDefaultScheduleWithAllDaysNonWorking() throws Exception {
         mockMvc.perform(get(WORK_SCHEDULE_ENDPOINT))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.workingHours.start").value("09:00"))
-                .andExpect(jsonPath("$.workingHours.end").value("17:00"))
+                .andExpect(jsonPath("$.workingHours.start").value(DEFAULT_START_TIME))
+                .andExpect(jsonPath("$.workingHours.end").value(DEFAULT_END_TIME))
                 .andExpect(jsonPath("$.days").isArray())
                 .andExpect(jsonPath("$.days.length()").value(7))
                 .andExpect(jsonPath("$.days[0].status").value("NON_WORKING"))
@@ -36,20 +43,55 @@ class WorkScheduleControllerTest extends PostgresIntegrationTest {
     void savesWeeklyStatusesAndSharedHours() throws Exception {
         mockMvc.perform(put(WORK_SCHEDULE_ENDPOINT)
                         .contentType(JSON_CONTENT_TYPE)
-                        .content(scheduleJson("08:30", "16:30", "WORK_FROM_HOME")))
+                        .content(scheduleJson("08:30", "16:30", WORK_FROM_HOME_STATUS)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.workingHours.start").value("08:30"))
-                .andExpect(jsonPath("$.days[0].status").value("WORK_FROM_HOME"))
+                .andExpect(jsonPath(MONDAY_STATUS_PATH).value(WORK_FROM_HOME_STATUS))
                 .andExpect(jsonPath("$.days[5].status").value("NON_WORKING"));
 
         mockMvc.perform(get(WORK_SCHEDULE_ENDPOINT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.workingHours.start").value("08:30"))
-                .andExpect(jsonPath("$.days[0].status").value("WORK_FROM_HOME"));
+                .andExpect(jsonPath(MONDAY_STATUS_PATH).value(WORK_FROM_HOME_STATUS));
 
         Assertions.assertThat(jdbcTemplate.queryForObject(
                         "select start_time::text from work_schedule where id = true", String.class))
                 .isEqualTo("08:30:00");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"WORK_FROM_HOME", "NON_WORKING"})
+    void replacesOfficeDayWithNonOfficeDay(final String replacementStatus) throws Exception {
+        final MvcResult created = mockMvc.perform(post("/api/offices")
+                        .contentType(JSON_CONTENT_TYPE)
+                        .content("""
+                                {"label":"Amsterdam office","address":"Damrak 1, Amsterdam","latitude":52.37,"longitude":4.90}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        final UUID officeId = UUID.fromString(JsonPath.read(
+                created.getResponse().getContentAsString(), "$.id"));
+
+        mockMvc.perform(put(WORK_SCHEDULE_ENDPOINT)
+                        .contentType(JSON_CONTENT_TYPE)
+                        .content(scheduleJsonWithOffice(officeId)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put(WORK_SCHEDULE_ENDPOINT)
+                        .contentType(JSON_CONTENT_TYPE)
+                        .content(scheduleJson(DEFAULT_START_TIME, DEFAULT_END_TIME, replacementStatus)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(MONDAY_STATUS_PATH).value(replacementStatus))
+                .andExpect(jsonPath(MONDAY_OFFICE_ID_PATH).doesNotExist());
+
+        mockMvc.perform(get(WORK_SCHEDULE_ENDPOINT))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(MONDAY_STATUS_PATH).value(replacementStatus))
+                .andExpect(jsonPath(MONDAY_OFFICE_ID_PATH).doesNotExist());
+
+        Assertions.assertThat(jdbcTemplate.queryForObject(
+                        "select office_id is null from work_schedule_days where day_of_week = 1", Boolean.class))
+                .isTrue();
     }
 
     @Test
@@ -119,7 +161,7 @@ class WorkScheduleControllerTest extends PostgresIntegrationTest {
     }
 
     private static String scheduleJsonWithOffice(final UUID officeId) {
-        return scheduleJson("09:00", "17:00", "OFFICE").replace(
+        return scheduleJson(DEFAULT_START_TIME, DEFAULT_END_TIME, "OFFICE").replace(
                 "{\"day\":\"MONDAY\",\"status\":\"OFFICE\"}",
                 "{\"day\":\"MONDAY\",\"status\":\"OFFICE\",\"officeId\":\"%s\"}".formatted(officeId));
     }
