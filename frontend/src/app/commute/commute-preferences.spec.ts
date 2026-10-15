@@ -31,6 +31,8 @@ describe('CommutePreferences', () => {
     expect(wakeUpInput.value).toBe('45');
     const content = (fixture.nativeElement as HTMLElement).textContent;
     expect(content).toContain('First transit access buffer');
+    expect(content).toContain('switches the dashboard to the next office-day preview');
+    expect(content).not.toContain('Hide today’s commute at this local time.');
     expect(content).not.toContain('Home location');
   });
 

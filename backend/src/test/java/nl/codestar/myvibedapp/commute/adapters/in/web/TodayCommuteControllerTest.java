@@ -45,6 +45,12 @@ class TodayCommuteControllerTest extends PostgresIntegrationTest {
     private static final String AMSTERDAM_ZUID = "Amsterdam Zuid";
     private static final String ROKIN = "Rokin";
     private static final String AMSTERDAM_OFFICE = "Amsterdam office";
+    private static final String BUS = "BUS";
+    private static final String SERVICE_34 = "34";
+    private static final String TODAY_DATE = "2026-10-07";
+    private static final String NEXT_OFFICE_DATE = "2026-10-09";
+    private static final String TARGET_PATH = "$.target";
+    private static final String SEGMENTS_PATH = "$.segments";
 
     private final ScheduleStore scheduleStore;
     private final ControllableTransitProvider transitProvider;
@@ -77,8 +83,8 @@ class TodayCommuteControllerTest extends PostgresIntegrationTest {
                                 Optional.of(AMSTERDAM_ZUID)),
                         new PublicTransportSegment(
                                 0,
-                                Optional.of("BUS"),
-                                Optional.of("34"),
+                                Optional.of(BUS),
+                                Optional.of(SERVICE_34),
                                 Optional.of("Central Station"),
                                 LocalDateTime.of(2026, 10, 7, 8, 25),
                                 LocalDateTime.of(2026, 10, 7, 8, 45),
@@ -111,7 +117,8 @@ class TodayCommuteControllerTest extends PostgresIntegrationTest {
                         .param(LONGITUDE_PARAMETER, ORIGIN_LONGITUDE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(STATUS_PATH).value("AVAILABLE"))
-                .andExpect(jsonPath("$.date").value("2026-10-07"))
+                .andExpect(jsonPath(TARGET_PATH).value("TODAY"))
+                .andExpect(jsonPath("$.date").value(TODAY_DATE))
                 .andExpect(jsonPath("$.wakeUpTime").value("07:30:00"))
                 .andExpect(jsonPath("$.leaveHomeTime").value("08:18:00"))
                 .andExpect(jsonPath("$.plannedArrivalTime").value("08:55:00"))
@@ -143,8 +150,8 @@ class TodayCommuteControllerTest extends PostgresIntegrationTest {
                 LocalDateTime.of(2026, 10, 7, 8, 56),
                 List.of(new PublicTransportSegment(
                         0,
-                        Optional.of("BUS"),
-                        Optional.of("34"),
+                        Optional.of(BUS),
+                        Optional.of(SERVICE_34),
                         Optional.of("Central Station"),
                         LocalDateTime.of(2026, 10, 7, 8, 25),
                         LocalDateTime.of(2026, 10, 7, 8, 56),
@@ -157,7 +164,7 @@ class TodayCommuteControllerTest extends PostgresIntegrationTest {
                         .param(LONGITUDE_PARAMETER, ORIGIN_LONGITUDE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(STATUS_PATH).value("UNAVAILABLE"))
-                .andExpect(jsonPath("$.segments").isEmpty())
+                .andExpect(jsonPath(SEGMENTS_PATH).isEmpty())
                 .andExpect(jsonPath("$.plannedArrivalTime").doesNotExist());
     }
 
@@ -168,20 +175,60 @@ class TodayCommuteControllerTest extends PostgresIntegrationTest {
                         .param(LONGITUDE_PARAMETER, ORIGIN_LONGITUDE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(STATUS_PATH).value("UNAVAILABLE"))
-                .andExpect(jsonPath("$.segments").isEmpty());
+                .andExpect(jsonPath(TARGET_PATH).value("TODAY"))
+                .andExpect(jsonPath(SEGMENTS_PATH).isEmpty());
     }
 
     @Test
-    void hidesTheCommuteAtTheVisibilityCutoff() throws Exception {
+    void selectsTheNextOfficeDayAtTheVisibilityCutoff() throws Exception {
         jdbcTemplate.update("update commute_preferences set visibility_cutoff = '08:00:00'");
-        persistOfficeDay();
+        persistOfficeDaysOnWednesdayAndFriday();
+        transitProvider.returnJourney(new TransitJourney(
+                LocalDateTime.of(2026, 10, 9, 8, 20),
+                LocalDateTime.of(2026, 10, 9, 8, 55),
+                List.of(new PublicTransportSegment(
+                        0,
+                        Optional.of(BUS),
+                        Optional.of(SERVICE_34),
+                        Optional.of("Central Station"),
+                        LocalDateTime.of(2026, 10, 9, 8, 20),
+                        LocalDateTime.of(2026, 10, 9, 8, 55),
+                        Optional.of(AMSTERDAM_ZUID),
+                        Optional.of(ROKIN),
+                        Optional.empty()))));
 
         mockMvc.perform(get(COMMUTE_ENDPOINT)
                         .param(LATITUDE_PARAMETER, ORIGIN_LATITUDE)
                         .param(LONGITUDE_PARAMETER, ORIGIN_LONGITUDE))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath(STATUS_PATH).value("HIDDEN"))
-                .andExpect(jsonPath("$.segments").isEmpty());
+                .andExpect(jsonPath(STATUS_PATH).value("AVAILABLE"))
+                .andExpect(jsonPath(TARGET_PATH).value("NEXT_OFFICE_DAY"))
+                .andExpect(jsonPath("$.date").value(NEXT_OFFICE_DATE))
+                .andExpect(jsonPath(SEGMENTS_PATH).isNotEmpty());
+        assertThat(transitProvider.request()).hasValueSatisfying(request -> {
+            assertThat(request.date()).isEqualTo(LocalDateTime.of(2026, 10, 9, 0, 0).toLocalDate());
+            assertThat(request.targetArrival()).isEqualTo(LocalDateTime.of(2026, 10, 9, 8, 55));
+        });
+    }
+
+    @Test
+    void reportsNoUpcomingOfficeDayAtTheVisibilityCutoffWithoutCallingTransitProvider() throws Exception {
+        jdbcTemplate.update("update commute_preferences set visibility_cutoff = '08:00:00'");
+        ScheduleScenario.builder()
+                .office(new SavedOffice(
+                        OFFICE_ID, AMSTERDAM_OFFICE, "Amsterdam office address", 52.0907, 5.1214, false))
+                .build()
+                .persist(scheduleStore);
+
+        mockMvc.perform(get(COMMUTE_ENDPOINT)
+                        .param(LATITUDE_PARAMETER, ORIGIN_LATITUDE)
+                        .param(LONGITUDE_PARAMETER, ORIGIN_LONGITUDE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(STATUS_PATH).value("NO_UPCOMING_OFFICE_DAY"))
+                .andExpect(jsonPath(TARGET_PATH).value("NEXT_OFFICE_DAY"))
+                .andExpect(jsonPath(SEGMENTS_PATH).isEmpty())
+                .andExpect(jsonPath("$.date").doesNotExist());
+        assertThat(transitProvider.request()).isEmpty();
     }
 
     @Test
@@ -217,6 +264,17 @@ class TodayCommuteControllerTest extends PostgresIntegrationTest {
                 .office(new SavedOffice(
                         OFFICE_ID, AMSTERDAM_OFFICE, "Amsterdam office address", 52.0907, 5.1214, false))
                 .weeklyDay(DayOfWeek.WEDNESDAY, ScheduleStatus.OFFICE, OFFICE_ID)
+                .build()
+                .persist(scheduleStore);
+    }
+
+    private void persistOfficeDaysOnWednesdayAndFriday() {
+        ScheduleScenario.builder()
+                .office(new SavedOffice(
+                        OFFICE_ID, AMSTERDAM_OFFICE, "Amsterdam office address", 52.0907, 5.1214, false))
+                .weeklyDay(DayOfWeek.WEDNESDAY, ScheduleStatus.OFFICE, OFFICE_ID)
+                .weeklyDay(DayOfWeek.THURSDAY, ScheduleStatus.WORK_FROM_HOME, null)
+                .weeklyDay(DayOfWeek.FRIDAY, ScheduleStatus.OFFICE, OFFICE_ID)
                 .build()
                 .persist(scheduleStore);
     }

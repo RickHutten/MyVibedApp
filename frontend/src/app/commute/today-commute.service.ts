@@ -17,9 +17,11 @@ export interface TodayCommuteSegment {
   readonly platform?: string;
 }
 
-export type TodayCommuteStatus = 'HIDDEN' | 'UNAVAILABLE' | 'AVAILABLE';
+export type TodayCommuteStatus = 'HIDDEN' | 'UNAVAILABLE' | 'NO_UPCOMING_OFFICE_DAY' | 'AVAILABLE';
+export type TodayCommuteTarget = 'TODAY' | 'NEXT_OFFICE_DAY';
 
 export interface TodayCommute {
+  readonly target: TodayCommuteTarget;
   readonly status: TodayCommuteStatus;
   readonly date?: string;
   readonly wakeUpTime?: string;

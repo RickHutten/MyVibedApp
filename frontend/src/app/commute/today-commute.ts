@@ -33,6 +33,10 @@ export class TodayCommute implements OnInit {
     return value?.slice(0, 5) ?? '';
   }
 
+  protected targetLabel(target: TodayCommuteData['target'] | undefined): string {
+    return target === 'NEXT_OFFICE_DAY' ? 'Next office day' : "Today's commute";
+  }
+
   protected segmentMode(segment: TodayCommuteSegment): string {
     if (segment.type === 'WALKING') {
       return 'Walk';

@@ -2,6 +2,7 @@ package nl.codestar.myvibedapp.schedule.application;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,8 +37,8 @@ public class UpcomingWorkScheduleService {
         final Optional<ResolvedScheduleDay> resolvedNext = ScheduleResolver.findNextWorkingDay(
                 today, schedule, recurringRules, overrides);
         return new UpcomingWorkSchedule(
-                toWorkDay(resolvedToday, officeLabels),
-                resolvedNext.map(day -> toWorkDay(day, officeLabels)));
+                toUpcomingWorkDay(resolvedToday, officeLabels),
+                resolvedNext.map(day -> toUpcomingWorkDay(day, officeLabels)));
     }
 
     @Transactional(readOnly = true)
@@ -46,16 +47,27 @@ public class UpcomingWorkScheduleService {
         final var schedule = scheduleStore.schedule();
         final ResolvedScheduleDay resolvedToday = ScheduleResolver.resolve(
                 today, schedule, scheduleStore.recurringRules(), scheduleStore.oneOffOverrides());
-        final ResolvedWorkday.Status status = toWorkdayStatus(resolvedToday.status());
-        final Optional<ResolvedWorkday.OfficeLocation> office = resolvedToday.status() == ScheduleStatus.OFFICE
-                ? officeLocation(resolvedToday)
-                : Optional.empty();
-        return office.map(location -> new ResolvedWorkday(
-                        today, status, location, schedule.workingHours().start()))
-                .or(() -> resolvedToday.status() == ScheduleStatus.OFFICE
-                        ? Optional.empty()
-                        : Optional.of(new ResolvedWorkday(
-                                today, status, null, schedule.workingHours().start())));
+        return toWorkday(resolvedToday, schedule.workingHours().start());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<ResolvedWorkday> getNextOfficeWorkday() {
+        final LocalDate today = LocalDate.now(scheduleClock);
+        final var schedule = scheduleStore.schedule();
+        return ScheduleResolver.findNextOfficeDay(
+                        today, schedule, scheduleStore.recurringRules(), scheduleStore.oneOffOverrides())
+                .flatMap(day -> toWorkday(day, schedule.workingHours().start()));
+    }
+
+    private Optional<ResolvedWorkday> toWorkday(
+            final ResolvedScheduleDay resolvedDay, final LocalTime workingHoursStart) {
+        final ResolvedWorkday.Status status = toWorkdayStatus(resolvedDay.status());
+        if (resolvedDay.status() == ScheduleStatus.OFFICE) {
+            return officeLocation(resolvedDay)
+                    .map(location -> new ResolvedWorkday(
+                            resolvedDay.date(), status, location, workingHoursStart));
+        }
+        return Optional.of(new ResolvedWorkday(resolvedDay.date(), status, null, workingHoursStart));
     }
 
     private Optional<ResolvedWorkday.OfficeLocation> officeLocation(final ResolvedScheduleDay day) {
@@ -74,7 +86,7 @@ public class UpcomingWorkScheduleService {
         };
     }
 
-    private UpcomingWorkDay toWorkDay(
+    private UpcomingWorkDay toUpcomingWorkDay(
             final ResolvedScheduleDay day, final Map<UUID, String> officeLabels) {
         final String officeLabel = day.status() == ScheduleStatus.OFFICE
                 ? officeLabels.get(Objects.requireNonNull(day.officeId(), "An office day requires an office"))

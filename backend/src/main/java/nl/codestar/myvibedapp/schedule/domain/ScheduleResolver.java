@@ -8,27 +8,22 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
 
+@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class ScheduleResolver {
 
     private static final long MAX_SEARCH_DAYS = 366L * 400L;
     private static final List<RecurrenceLevel> RECURRENCE_PRECEDENCE = List.of(
             RecurrenceLevel.MONTHS, RecurrenceLevel.WEEKS, RecurrenceLevel.DAYS);
 
-    private ScheduleResolver() {
-    }
-
     public static ResolvedScheduleDay resolve(
             final LocalDate date,
             final WorkSchedule defaultSchedule,
             final Collection<RecurringRule> recurringRules,
             final Collection<OneOffOverride> overrides) {
-        Objects.requireNonNull(date, "date");
-        Objects.requireNonNull(defaultSchedule, "defaultSchedule");
-        Objects.requireNonNull(recurringRules, "recurringRules");
-        Objects.requireNonNull(overrides, "overrides");
-
         final Optional<OneOffOverride> override = overrides.stream()
                 .filter(candidate -> candidate.covers(date))
                 .findFirst();
@@ -57,11 +52,6 @@ public final class ScheduleResolver {
             final WorkSchedule defaultSchedule,
             final Collection<RecurringRule> recurringRules,
             final Collection<OneOffOverride> overrides) {
-        Objects.requireNonNull(today, "today");
-        Objects.requireNonNull(defaultSchedule, "defaultSchedule");
-        Objects.requireNonNull(recurringRules, "recurringRules");
-        Objects.requireNonNull(overrides, "overrides");
-
         if (!hasPotentialWorkingDate(today, defaultSchedule, recurringRules, overrides)) {
             return Optional.empty();
         }
@@ -72,6 +62,27 @@ public final class ScheduleResolver {
         while (!date.isAfter(searchEnd)) {
             final ResolvedScheduleDay resolved = resolve(date, defaultSchedule, recurringRules, overrides);
             if (resolved.status() != ScheduleStatus.NON_WORKING) {
+                return Optional.of(resolved);
+            }
+            date = date.plusDays(1);
+        }
+        return Optional.empty();
+    }
+
+    public static Optional<ResolvedScheduleDay> findNextOfficeDay(
+            final LocalDate today,
+            final WorkSchedule defaultSchedule,
+            final Collection<RecurringRule> recurringRules,
+            final Collection<OneOffOverride> overrides) {
+        if (!hasPotentialOfficeDate(today, defaultSchedule, recurringRules, overrides)) {
+            return Optional.empty();
+        }
+
+        final LocalDate searchEnd = officeSearchEnd(today, defaultSchedule, recurringRules, overrides);
+        LocalDate date = today.plusDays(1);
+        while (!date.isAfter(searchEnd)) {
+            final ResolvedScheduleDay resolved = resolve(date, defaultSchedule, recurringRules, overrides);
+            if (resolved.status() == ScheduleStatus.OFFICE) {
                 return Optional.of(resolved);
             }
             date = date.plusDays(1);
@@ -123,6 +134,49 @@ public final class ScheduleResolver {
                         .map(RecurringRule::endDate)
                         .filter(Objects::nonNull)
                         .filter(date -> date.isAfter(today)))
+                .max(Comparator.naturalOrder())
+                .orElse(today);
+    }
+
+    private static boolean hasPotentialOfficeDate(
+            final LocalDate today,
+            final WorkSchedule defaultSchedule,
+            final Collection<RecurringRule> recurringRules,
+            final Collection<OneOffOverride> overrides) {
+        final boolean defaultCanBeOffice = defaultSchedule.days().values().stream()
+                .anyMatch(day -> day.status() == ScheduleStatus.OFFICE);
+        final boolean recurringCanBeOffice = recurringRules.stream()
+                .filter(rule -> rule.status() == ScheduleStatus.OFFICE)
+                .anyMatch(rule -> rule.endDate() == null || rule.endDate().isAfter(today));
+        final boolean overrideCanBeOffice = overrides.stream()
+                .filter(override -> override.status() == ScheduleStatus.OFFICE)
+                .anyMatch(override -> override.effectiveEndDate().isAfter(today));
+        return defaultCanBeOffice || recurringCanBeOffice || overrideCanBeOffice;
+    }
+
+    private static LocalDate officeSearchEnd(
+            final LocalDate today,
+            final WorkSchedule defaultSchedule,
+            final Collection<RecurringRule> recurringRules,
+            final Collection<OneOffOverride> overrides) {
+        final boolean hasUnboundedOfficeSource = defaultSchedule.days().values().stream()
+                .anyMatch(day -> day.status() == ScheduleStatus.OFFICE)
+                || recurringRules.stream()
+                        .anyMatch(rule -> rule.status() == ScheduleStatus.OFFICE && rule.endDate() == null);
+        if (hasUnboundedOfficeSource) {
+            return today.plusDays(MAX_SEARCH_DAYS);
+        }
+
+        return Stream.concat(
+                        overrides.stream()
+                                .filter(override -> override.status() == ScheduleStatus.OFFICE)
+                                .map(OneOffOverride::effectiveEndDate)
+                                .filter(date -> date.isAfter(today)),
+                        recurringRules.stream()
+                                .filter(rule -> rule.status() == ScheduleStatus.OFFICE)
+                                .map(RecurringRule::endDate)
+                                .filter(Objects::nonNull)
+                                .filter(date -> date.isAfter(today)))
                 .max(Comparator.naturalOrder())
                 .orElse(today);
     }

@@ -62,7 +62,7 @@ Use the story identifier in related branch names, plan filenames, pull requests,
 When the user wants an orchestration workflow, the main session is the coordinator rather than the default implementer. Before editing, classify the work as direct, delegated, or parallel; delegate non-trivial implementation and review work, while keeping scope, user decisions, synthesis, integration, and final verification in the main session.
 
 - Give each implementation child a focused objective, acceptance criteria, relevant context, and exact verification commands.
-- For code-editing children, set an explicit isolated workspace using both `workspace_kind` and an absolute `workspace_path` (or an explicitly created worktree). Never assume the runtime selected isolation, and never allow concurrent children to edit the same working tree.
+- For code-editing children, prefer an explicit isolated workspace using both `workspace_kind` and an absolute `workspace_path` (or an explicitly created worktree). The user may explicitly allow implementation in the main working tree; when that happens, serialize code-editing children and do not allow concurrent edits.
 - After a child reports completion, inspect the child workspace and the main workspace with `git status` and the actual diff. A child report is not evidence that the expected files changed in the expected workspace.
 - Use a fresh review child after implementation; do not use the implementation child as its own reviewer.
 - Integrate only reviewed, in-scope changes, then run final verification from the main workspace.
@@ -75,7 +75,7 @@ For every approved non-trivial coding story or multi-scenario test improvement:
 1. Keep the main conversation responsible for story scope, user decisions, synthesis, integration, and final verification.
 2. Delegate implementation to a focused child agent with the approved story, implementation plan or acceptance criteria, relevant files, constraints, and test commands. Keep the implementation agent's final report concise and structured.
 3. Treat a request to improve a test class, even without production-code changes, as eligible for delegation when it adds multiple behavior cases, changes test support, or requires meaningful fixture refactoring. If the user asks to work one test at a time, delegate one class at a time; sequencing does not justify keeping the implementation in the main conversation.
-4. Do not use the implementation agent as the reviewer. Code-editing child agents must have an isolated, explicitly owned workspace and must not edit the same working tree concurrently.
+4. Do not use the implementation agent as the reviewer. Code-editing child agents should have an isolated, explicitly owned workspace; if the user allows the main working tree, serialize them so they never edit it concurrently.
 5. After implementation completes, delegate a fresh review agent with the story and acceptance criteria, implementation plan, changed files or diff, and available test results. Do not pass the full conversation transcript unless it is necessary.
 6. Require the review agent to inspect the actual changes and run relevant checks. Its report should contain only the verdict, findings, missing tests, regressions, and required changes.
 7. The main conversation resolves review findings and performs the final verification before reporting completion.

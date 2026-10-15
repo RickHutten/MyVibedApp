@@ -24,10 +24,11 @@ describe('TodayCommute', () => {
       .expectOne(
         (request) =>
           request.url === '/api/work-schedule/commute/today' &&
-          request.params.get('latitude') === '52.3676' &&
-          request.params.get('longitude') === '4.9041',
+          request.params.get('latitude') === '52.3287776' &&
+          request.params.get('longitude') === '4.9647344',
       )
       .flush({
+        target: 'TODAY',
         status: 'AVAILABLE',
         date: '2026-10-07',
         wakeUpTime: '07:30:00',
@@ -86,12 +87,14 @@ describe('TodayCommute', () => {
     fixture.detectChanges();
 
     const content = fixture.nativeElement.textContent as string;
+    expect(content).toContain("Today's commute");
     expect(content).toContain('Wake up07:30');
     expect(content).toContain('Leave home08:17');
     expect(content).toContain('Amsterdam office');
     expect(content).not.toContain('Arrive at Amsterdam office by 08:55');
+    expect(fixture.nativeElement.querySelector('.commute-date')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.commute-destination')).toBeNull();
     expect(content).not.toContain('Journey');
-    expect(content).not.toContain('38 minutes');
     expect(content).not.toContain('Transfers');
     const segments = fixture.nativeElement.querySelectorAll('.segments > li');
     expect(segments.length).toBe(5);
@@ -188,6 +191,43 @@ describe('TodayCommute', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('No public transport route available');
+  });
+
+  it('renders the next office day target with its date and commute summary', async () => {
+    const fixture = await createComponent();
+    TestBed.inject(HttpTestingController)
+      .expectOne((request) => request.url === '/api/work-schedule/commute/today')
+      .flush({
+        target: 'NEXT_OFFICE_DAY',
+        status: 'AVAILABLE',
+        date: '2026-10-09',
+        wakeUpTime: '07:30:00',
+        leaveHomeTime: '08:17:00',
+        plannedArrivalTime: '08:55:00',
+        destinationOffice: 'Amsterdam office',
+        segments: [],
+      });
+    fixture.detectChanges();
+
+    const content = fixture.nativeElement.textContent as string;
+    expect(content).toContain('Next office day');
+    expect(fixture.nativeElement.querySelector('.commute-date')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.commute-destination')).toBeNull();
+    expect(content).not.toContain('Journey');
+    expect(content).not.toContain('Transfers');
+  });
+
+  it('renders the no-upcoming-office-day state without commute details', async () => {
+    const fixture = await createComponent();
+    TestBed.inject(HttpTestingController)
+      .expectOne((request) => request.url === '/api/work-schedule/commute/today')
+      .flush({ target: 'NEXT_OFFICE_DAY', status: 'NO_UPCOMING_OFFICE_DAY', segments: [] });
+    fixture.detectChanges();
+
+    const content = fixture.nativeElement.textContent as string;
+    expect(content).toContain('No upcoming office day scheduled');
+    expect(content).not.toContain('Wake up');
+    expect(content).not.toContain('No public transport route available');
   });
 
   it('omits optional transit details when the provider does not supply them', async () => {

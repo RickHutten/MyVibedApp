@@ -31,8 +31,8 @@ describe('WeatherCard', () => {
     const request = http.expectOne(
       (candidate) =>
         candidate.url === '/api/weather/current' &&
-        candidate.params.get('latitude') === '52.3676' &&
-        candidate.params.get('longitude') === '4.9041',
+        candidate.params.get('latitude') === '52.3287776' &&
+        candidate.params.get('longitude') === '4.9647344',
     );
     request.flush({
       temperatureC: 19.7,

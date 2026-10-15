@@ -1,5 +1,5 @@
 @if (status() !== 'ready' || commute()?.status !== 'HIDDEN') {
-  <section class="commute-card" aria-label="Today's outbound commute">
+  <section class="commute-card" aria-label="Outbound commute">
     @if (status() === 'loading') {
       <p>Loading commute…</p>
     } @else if (status() === 'unavailable') {
@@ -7,7 +7,7 @@
     } @else if (commute(); as current) {
       @if (current.status === 'AVAILABLE') {
         <header>
-          <p class="eyebrow">Today's commute</p>
+          <p class="eyebrow">{{ targetLabel(current.target) }}</p>
         </header>
         <dl class="timings">
           <div>
@@ -54,6 +54,8 @@
         </ol>
       } @else if (current.status === 'UNAVAILABLE') {
         <p>No public transport route available</p>
+      } @else if (current.status === 'NO_UPCOMING_OFFICE_DAY') {
+        <p>No upcoming office day scheduled</p>
       }
     }
   </section>

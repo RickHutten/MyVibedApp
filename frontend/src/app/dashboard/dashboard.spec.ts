@@ -27,8 +27,8 @@ describe('Dashboard', () => {
       .expectOne(
         (request) =>
           request.url === '/api/weather/current' &&
-          request.params.get('latitude') === '52.3676' &&
-          request.params.get('longitude') === '4.9041',
+          request.params.get('latitude') === '52.3287776' &&
+          request.params.get('longitude') === '4.9647344',
       )
       .flush({
         temperatureC: 19.7,

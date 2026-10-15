@@ -100,6 +100,22 @@ class ScheduleResolverTest {
         assertThat(result).isEmpty();
     }
 
+    @Test
+    void nextOfficeDayStartsStrictlyTomorrowAndSkipsNonOfficeDates() {
+        final WorkSchedule schedule = schedule(Map.of(
+                DayOfWeek.THURSDAY, new ScheduleDay(ScheduleStatus.WORK_FROM_HOME, null),
+                DayOfWeek.FRIDAY, new ScheduleDay(ScheduleStatus.NON_WORKING, null),
+                DayOfWeek.SATURDAY, new ScheduleDay(ScheduleStatus.OFFICE, OFFICE_ID)));
+
+        final var result = ScheduleResolver.findNextOfficeDay(TODAY, schedule, List.of(), List.of());
+
+        assertThat(result).hasValueSatisfying(day -> {
+            assertThat(day.date()).isEqualTo(LocalDate.of(2026, 10, 10));
+            assertThat(day.status()).isEqualTo(ScheduleStatus.OFFICE);
+            assertThat(day.officeId()).isEqualTo(OFFICE_ID);
+        });
+    }
+
     private static WorkSchedule schedule(final Map<DayOfWeek, ScheduleDay> overrides) {
         final Map<DayOfWeek, ScheduleDay> days = new EnumMap<>(DayOfWeek.class);
         for (final DayOfWeek day : DayOfWeek.values()) {

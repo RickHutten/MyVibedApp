@@ -30,24 +30,28 @@ public class TodayCommuteService {
 
     @Transactional(readOnly = true)
     public TodayCommute get(final double originLatitude, final double originLongitude) {
+        final CommutePreferences preferences = commutePreferencesService.get();
+        final TodayCommute.Target target = target(preferences);
         final Optional<TransitOrigin> origin = origin(originLatitude, originLongitude);
         if (origin.isEmpty()) {
             log.warn("Commute unavailable because the origin coordinates are invalid");
-            return TodayCommute.unavailable();
+            return TodayCommute.unavailable(target);
         }
 
-        final CommutePreferences preferences = commutePreferencesService.get();
-        if (!isVisible(preferences)) {
-            return TodayCommute.hidden();
+        if (target == TodayCommute.Target.TODAY) {
+            final Optional<ResolvedWorkday> workdayResult = upcomingWorkScheduleService.getTodayWorkday();
+            if (workdayResult.isEmpty()) {
+                log.warn("Commute unavailable because today's office destination could not be resolved");
+                return TodayCommute.unavailable(target);
+            }
+            return route(origin.orElseThrow(), workdayResult.orElseThrow(), preferences, target);
         }
 
-        final Optional<ResolvedWorkday> workdayResult = upcomingWorkScheduleService.getTodayWorkday();
+        final Optional<ResolvedWorkday> workdayResult = upcomingWorkScheduleService.getNextOfficeWorkday();
         if (workdayResult.isEmpty()) {
-            log.warn("Commute unavailable because today's office destination could not be resolved");
-            return TodayCommute.unavailable();
+            return TodayCommute.noUpcomingOfficeDay();
         }
-        final ResolvedWorkday workday = workdayResult.orElseThrow();
-        return route(origin.orElseThrow(), workday, preferences);
+        return route(origin.orElseThrow(), workdayResult.orElseThrow(), preferences, target);
     }
 
     private Optional<TransitOrigin> origin(final double latitude, final double longitude) {
@@ -61,9 +65,10 @@ public class TodayCommuteService {
     private TodayCommute route(
             final TransitOrigin origin,
             final ResolvedWorkday workday,
-            final CommutePreferences preferences) {
+            final CommutePreferences preferences,
+            final TodayCommute.Target target) {
         if (workday.status() != ResolvedWorkday.Status.OFFICE) {
-            return TodayCommute.hidden();
+            return TodayCommute.hidden(target);
         }
 
         final LocalDate today = workday.date();
@@ -71,29 +76,31 @@ public class TodayCommuteService {
                 .minusMinutes(preferences.officeArrivalLeadMinutes());
         final ResolvedWorkday.OfficeLocation office = workday.office();
         if (office == null) {
-            log.warn("Commute unavailable because today's office has no coordinates");
-            return TodayCommute.unavailable();
+            log.warn("Commute unavailable because the selected office has no coordinates");
+            return TodayCommute.unavailable(target);
         }
         final TransitRequest request = new TransitRequest(
                 origin, office.latitude(), office.longitude(), today, targetArrival);
         final Optional<TransitJourney> journey = transitProvider.findJourney(request);
         if (journey.isEmpty()) {
-            return TodayCommute.unavailable();
+            return TodayCommute.unavailable(target);
         }
         final TransitJourney candidate = journey.orElseThrow();
         if (candidate.arrival().isAfter(targetArrival)) {
-            return TodayCommute.unavailable();
+            return TodayCommute.unavailable(target);
         }
         final Optional<PublicTransportSegment> firstTransit = candidate.firstPublicTransportSegment();
         if (firstTransit.isEmpty()) {
-            return TodayCommute.unavailable();
+            return TodayCommute.unavailable(target);
         }
-        return available(candidate, today, office.label(), firstTransit.orElseThrow(), preferences);
+        return available(candidate, today, office.label(), firstTransit.orElseThrow(), preferences, target);
     }
 
 
-    private boolean isVisible(final CommutePreferences preferences) {
-        return LocalTime.now(scheduleClock).isBefore(preferences.visibilityCutoff());
+    private TodayCommute.Target target(final CommutePreferences preferences) {
+        return LocalTime.now(scheduleClock).isBefore(preferences.visibilityCutoff())
+                ? TodayCommute.Target.TODAY
+                : TodayCommute.Target.NEXT_OFFICE_DAY;
     }
 
     private TodayCommute available(
@@ -101,13 +108,14 @@ public class TodayCommuteService {
             final LocalDate date,
             final String officeLabel,
             final PublicTransportSegment firstTransit,
-            final CommutePreferences preferences) {
+            final CommutePreferences preferences,
+            final TodayCommute.Target target) {
         final LocalDateTime leaveHome = firstTransit.departure()
                 .minus(initialWalkingDuration(journey, firstTransit))
                 .minusMinutes(preferences.transitAccessBufferMinutes());
         final LocalDateTime wakeUp = leaveHome.minusMinutes(preferences.wakeUpLeadMinutes());
         return new TodayCommute(
-                TodayCommute.Status.AVAILABLE,
+                target, TodayCommute.Status.AVAILABLE,
                 date,
                 floorToQuarterHour(wakeUp).toLocalTime(),
                 leaveHome.toLocalTime(),

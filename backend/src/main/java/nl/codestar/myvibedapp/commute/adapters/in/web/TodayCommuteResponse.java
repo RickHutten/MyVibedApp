@@ -16,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 record TodayCommuteResponse(
+        TodayCommute.Target target,
         TodayCommute.Status status,
         @Nullable LocalDate date,
         @Nullable LocalTime wakeUpTime,
@@ -28,6 +29,7 @@ record TodayCommuteResponse(
 
     static TodayCommuteResponse from(final TodayCommute commute) {
         return new TodayCommuteResponse(
+                commute.target(),
                 commute.status(),
                 commute.date(),
                 commute.wakeUpTime(),
