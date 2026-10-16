@@ -89,6 +89,137 @@ class TransitousAdapterTest {
     }
 
     @Test
+    void selectsTheLatestJourneyThatStillArrivesByTheRequestedTime() throws IOException {
+        try (TransitousHttpStub stub = TransitousHttpStub.responding("""
+                {
+                  "itineraries": [
+                    {
+                      "endTime": "2026-10-07T06:45:00Z",
+                      "legs": [
+                        {
+                          "mode": "WALK",
+                          "startTime": "2026-10-07T05:55:00Z",
+                          "endTime": "2026-10-07T06:00:00Z"
+                        },
+                        {
+                          "mode": "BUS",
+                          "startTime": "2026-10-07T06:00:00Z",
+                          "endTime": "2026-10-07T06:45:00Z"
+                        }
+                      ]
+                    },
+                    {
+                      "endTime": "2026-10-07T06:32:00Z",
+                      "legs": [
+                        {
+                          "mode": "WALK",
+                          "startTime": "2026-10-07T05:55:00Z",
+                          "endTime": "2026-10-07T06:00:00Z"
+                        },
+                        {
+                          "mode": "BUS",
+                          "startTime": "2026-10-07T06:00:00Z",
+                          "endTime": "2026-10-07T06:32:00Z"
+                        }
+                      ]
+                    },
+                    {
+                      "endTime": "2026-10-07T07:05:00Z",
+                      "legs": [
+                        {
+                          "mode": "WALK",
+                          "startTime": "2026-10-07T06:20:00Z",
+                          "endTime": "2026-10-07T06:25:00Z"
+                        },
+                        {
+                          "mode": "BUS",
+                          "startTime": "2026-10-07T06:25:00Z",
+                          "endTime": "2026-10-07T07:05:00Z"
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """)) {
+            Optional<TransitJourney> result = adapterFor(stub).findJourney(request());
+
+            assertThat(result).isPresent();
+            assertThat(result.orElseThrow().arrival()).isEqualTo(LocalDateTime.of(2026, 10, 7, 8, 45));
+            assertThat(stub.requestUri().getQuery()).contains("numItineraries=5");
+        }
+    }
+
+    @Test
+    void skipsMalformedItinerariesAndSelectsAValidQualifyingJourney() throws IOException {
+        try (TransitousHttpStub stub = TransitousHttpStub.responding("""
+                {
+                  "itineraries": [
+                    {
+                      "endTime": "2026-10-07T06:40:00Z",
+                      "legs": [
+                        {
+                          "mode": "WALK",
+                          "startTime": "2026-10-07T05:55:00Z",
+                          "endTime": "2026-10-07T06:10:00Z"
+                        },
+                        {
+                          "mode": "BUS",
+                          "startTime": "2026-10-07T06:05:00Z",
+                          "endTime": "2026-10-07T06:40:00Z"
+                        }
+                      ]
+                    },
+                    {
+                      "endTime": "2026-10-07T06:45:00Z",
+                      "legs": [
+                        {
+                          "mode": "WALK",
+                          "startTime": "2026-10-07T06:05:00Z",
+                          "endTime": "2026-10-07T06:10:00Z"
+                        },
+                        {
+                          "mode": "BUS",
+                          "startTime": "2026-10-07T06:10:00Z",
+                          "endTime": "2026-10-07T06:45:00Z"
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """)) {
+            Optional<TransitJourney> result = adapterFor(stub).findJourney(request());
+
+            assertThat(result).isPresent();
+            assertThat(result.orElseThrow().arrival()).isEqualTo(LocalDateTime.of(2026, 10, 7, 8, 45));
+        }
+    }
+
+    @Test
+    void returnsEmptyWhenAllItinerariesArriveAfterTheRequestedTime() throws IOException {
+        try (TransitousHttpStub stub = TransitousHttpStub.responding("""
+                {
+                  "itineraries": [{
+                    "endTime": "2026-10-07T07:05:00Z",
+                    "legs": [
+                      {
+                        "mode": "WALK",
+                        "startTime": "2026-10-07T06:20:00Z",
+                        "endTime": "2026-10-07T06:25:00Z"
+                      },
+                      {
+                        "mode": "BUS",
+                        "startTime": "2026-10-07T06:25:00Z",
+                        "endTime": "2026-10-07T07:05:00Z"
+                      }
+                    ]
+                  }]
+                }
+                """)) {
+            assertThat(adapterFor(stub).findJourney(request())).isEmpty();
+        }
+    }
+
+    @Test
     void preservesPublicTransportSegmentsWhenOptionalProviderDetailsAreMissing() throws IOException {
         try (TransitousHttpStub stub = TransitousHttpStub.responding("""
                 {

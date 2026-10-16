@@ -7,9 +7,11 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
+import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
 import nl.codestar.myvibedapp.commute.application.TransitProvider;
 import nl.codestar.myvibedapp.commute.application.TransitRequest;
@@ -18,6 +20,7 @@ import nl.codestar.myvibedapp.commute.domain.PublicTransportSegment;
 import nl.codestar.myvibedapp.commute.domain.TransitJourney;
 import nl.codestar.myvibedapp.commute.domain.WalkingSegment;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -43,7 +46,7 @@ final class TransitousAdapter implements TransitProvider {
         restClient = RestClient.builder()
                 .baseUrl(properties.baseUrl())
                 .requestFactory(requestFactory)
-                .defaultHeader("User-Agent", userAgent)
+                .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
                 .build();
     }
 
@@ -62,7 +65,7 @@ final class TransitousAdapter implements TransitProvider {
                                     .atZone(SCHEDULE_ZONE)
                                     .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
                     .queryParam("arriveBy", true)
-                    .queryParam("numItineraries", 1)
+                    .queryParam("numItineraries", 5)
                     .build()
                     .encode()
                     .toUriString()
@@ -109,15 +112,24 @@ final class TransitousAdapter implements TransitProvider {
                     request.targetArrival());
             return Optional.empty();
         }
+        final Optional<TransitJourney> journey = StreamSupport.stream(itineraries.spliterator(), false)
+                .map(itinerary -> parseItinerarySafely(itinerary, request))
+                .flatMap(Optional::stream)
+                .filter(candidate -> !candidate.arrival().isAfter(request.targetArrival()))
+                .max(Comparator.comparing(TransitJourney::arrival));
+        if (journey.isEmpty()) {
+            log.debug(
+                    "Transitous returned no itinerary arriving by date {} and target arrival {}",
+                    request.date(),
+                    request.targetArrival());
+        }
+        return journey;
+    }
+
+    private Optional<TransitJourney> parseItinerarySafely(
+            final JsonNode itinerary, final TransitRequest request) {
         try {
-            final Optional<TransitJourney> journey = parseItinerary(itineraries.get(0));
-            if (journey.isEmpty()) {
-                log.warn(
-                        "Transitous returned an itinerary that could not be mapped for date {} and target arrival {}",
-                        request.date(),
-                        request.targetArrival());
-            }
-            return journey;
+            return parseItinerary(itinerary);
         } catch (IllegalArgumentException exception) {
             log.warn(
                     "Transitous returned an itinerary that could not be mapped for date {} and target arrival {}",

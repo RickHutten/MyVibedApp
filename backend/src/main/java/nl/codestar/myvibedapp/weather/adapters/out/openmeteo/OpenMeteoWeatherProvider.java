@@ -20,6 +20,8 @@ import nl.codestar.myvibedapp.weather.application.WeatherProvider;
 import nl.codestar.myvibedapp.weather.application.WeatherUnavailableException;
 import nl.codestar.myvibedapp.weather.domain.CurrentWeather;
 import nl.codestar.myvibedapp.weather.domain.WeatherLocation;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -62,13 +64,17 @@ final class OpenMeteoWeatherProvider implements WeatherProvider {
     private final RestClient restClient;
     private final Validator validator;
 
-    OpenMeteoWeatherProvider(final OpenMeteoProperties properties, final Validator validator) {
+    OpenMeteoWeatherProvider(
+            final OpenMeteoProperties properties,
+            final Validator validator,
+            @Value("${spring.application.name:my-vibed-app}") final String userAgent) {
         final SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.connectTimeout());
         requestFactory.setReadTimeout(properties.readTimeout());
         this.restClient = RestClient.builder()
                 .baseUrl(properties.baseUrl())
                 .requestFactory(requestFactory)
+                .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
                 .build();
         this.validator = validator;
     }

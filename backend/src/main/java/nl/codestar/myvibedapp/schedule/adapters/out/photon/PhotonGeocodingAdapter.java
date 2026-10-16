@@ -7,6 +7,7 @@ import java.util.Optional;
 import nl.codestar.myvibedapp.schedule.application.GeocodingPort;
 import nl.codestar.myvibedapp.schedule.application.GeocodingUnavailableException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -29,7 +30,7 @@ final class PhotonGeocodingAdapter implements GeocodingPort {
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
-                .defaultHeader("User-Agent", userAgent)
+                .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
                 .build();
     }
 

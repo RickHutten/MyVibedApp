@@ -116,7 +116,10 @@ class OpenMeteoWeatherProviderTest {
 
     private OpenMeteoWeatherProvider providerFor(final OpenMeteoHttpStub stub) {
         return new OpenMeteoWeatherProvider(
-                new OpenMeteoProperties(stub.baseUrl(), Duration.ofSeconds(2), Duration.ofSeconds(3)), VALIDATOR);
+                new OpenMeteoProperties(stub.baseUrl(), Duration.ofSeconds(2), Duration.ofSeconds(3)),
+                VALIDATOR,
+                "agent"
+        );
     }
 
     private String validPayload() {
